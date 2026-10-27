@@ -1,0 +1,678 @@
+{
+  "name": "6 - Enviar Encerramento ao Operacional",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "={{ 'encerramento:operacional:' + $('Enviar Enquete Para Coordenador Operacional').item.json.id.split('_').pop() }}",
+        "value": "={{ $('Entrada Operacional').item.json.itemId }}"
+      },
+      "id": "a8f3e38a-9d96-4830-962b-9b0e31ed9709",
+      "name": "Receber Cliente do Encerramento",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        672,
+        -48
+      ],
+      "credentials": {
+        "redis": {
+          "name": "<<CRIAR CREDENCIAL redis>>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "f1eb8404-c3b0-42be-94df-bcb0d38fe452",
+      "name": "Entrada Operacional",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/sendPoll",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"session\": \"automacao_encerramento_and_adesao\",\n  \"chatId\": \"<<PREENCHER>>\",\n  \"poll\": {\n    \"name\": \"🚨 ENCERRAMENTO OPERACIONAL\\n\\n👤 Nome: {{ $('Entrada Operacional').item.json.nomeCliente }}\\n📍 Endereço: {{ $('Entrada Operacional').item.json.endereco }}\\n📝 Motivo: {{ $('Entrada Operacional').item.json.motivo }}\\n📧 E-mail: {{ $('Entrada Operacional').item.json.email }}\\n📞 Telefone: {{ $('Entrada Operacional').item.json.telefone }}\\n📅 Aviso Prévio: {{ $('Entrada Operacional').item.json.avisoPrevioFormatado }}\\n\\nFavor retirar a placa da residência do cliente.\",\n    \"options\": [\n      \"✅ Placa Retirada\",\n      \"⚠️ Placa Não Retirada\"\n    ],\n    \"multipleAnswers\": false\n  }\n}",
+        "options": {}
+      },
+      "id": "9cc4e636-ab03-4437-9bca-007fa9b3fcfe",
+      "name": "Enviar Enquete Para Coordenador Operacional",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        448,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "item",
+        "operation": "update",
+        "site": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Gestão Operacional"
+        },
+        "list": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Encerramento de Contrato"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Entrada Operacional').item.json.itemId }}",
+            "RetiradodoFindMe_x003f_": "Pendente",
+            "PlacaRemovida": "Pendente",
+            "StatusOperacional": "Aguardando",
+            "Processamento": "=Aguardando Operacional e Sistemas"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "Title",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Título",
+              "readOnly": false,
+              "required": false,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "NomedoCliente",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Nome do Cliente",
+              "readOnly": false,
+              "required": false,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "ContatodoCliente",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Telefone do Cliente",
+              "readOnly": false,
+              "required": false,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "PlacaRemovida",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Placa",
+              "readOnly": false,
+              "required": false,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Pendente",
+                  "value": "Pendente"
+                },
+                {
+                  "name": "Retirada",
+                  "value": "Retirada"
+                },
+                {
+                  "name": "Não Retirada",
+                  "value": "Não Retirada"
+                }
+              ],
+              "removed": false
+            },
+            {
+              "id": "ClienteRecuperado",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Cliente",
+              "readOnly": false,
+              "required": false,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Recuperado",
+                  "value": "Recuperado"
+                },
+                {
+                  "name": "Não Recuperado",
+                  "value": "Não Recuperado"
+                },
+                {
+                  "name": "Pendente",
+                  "value": "Pendente"
+                }
+              ],
+              "removed": true
+            },
+            {
+              "id": "RetiradodoFindMe_x003f_",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Sistemas",
+              "readOnly": false,
+              "required": false,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Retirado",
+                  "value": "Retirado"
+                },
+                {
+                  "name": "Pendente",
+                  "value": "Pendente"
+                }
+              ],
+              "removed": false
+            },
+            {
+              "id": "Motivo",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Motivo",
+              "readOnly": false,
+              "required": false,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "E_x002d_MaildoCliente",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "E-Mail do Cliente",
+              "readOnly": false,
+              "required": false,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "Processamento",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "StatusAutomacao",
+              "readOnly": false,
+              "required": false,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Pendente",
+                  "value": "Pendente"
+                },
+                {
+                  "name": "Aguardando Comercial",
+                  "value": "Aguardando Comercial"
+                },
+                {
+                  "name": "Aguardando Aviso Prévio",
+                  "value": "Aguardando Aviso Prévio"
+                },
+                {
+                  "name": "Aguardando Operacional",
+                  "value": "Aguardando Operacional"
+                },
+                {
+                  "name": "Cliente Recuperado",
+                  "value": "Cliente Recuperado"
+                },
+                {
+                  "name": "Concluído",
+                  "value": "Concluído"
+                }
+              ],
+              "removed": false
+            },
+            {
+              "id": "AvisoPrevio",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Aviso Previo",
+              "readOnly": false,
+              "required": false,
+              "type": "dateTime",
+              "removed": true
+            },
+            {
+              "id": "StatusComercial",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "StatusComercial",
+              "readOnly": false,
+              "required": false,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Aguardando",
+                  "value": "Aguardando"
+                },
+                {
+                  "name": "Recuperado",
+                  "value": "Recuperado"
+                },
+                {
+                  "name": "Não Recuperado",
+                  "value": "Não Recuperado"
+                },
+                {
+                  "name": "Prazo Expirado",
+                  "value": "Prazo Expirado"
+                },
+                {
+                  "name": "Aguardando Observação",
+                  "value": "Aguardando Observação"
+                }
+              ],
+              "removed": true
+            },
+            {
+              "id": "DataInicioComercial",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "DataInicioComercial",
+              "readOnly": false,
+              "required": false,
+              "type": "dateTime",
+              "removed": true
+            },
+            {
+              "id": "DataLimiteComercial",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "DataLimiteComercial",
+              "readOnly": false,
+              "required": false,
+              "type": "dateTime",
+              "removed": true
+            },
+            {
+              "id": "DataRespostaComercial",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "DataRespostaComercial",
+              "readOnly": false,
+              "required": false,
+              "type": "dateTime",
+              "removed": true
+            },
+            {
+              "id": "PollKeyComercial",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "PollKeyComercial",
+              "readOnly": false,
+              "required": false,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "Observa_x00e7__x00e3_oComercial",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Observação Comercial",
+              "readOnly": false,
+              "required": false,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "Observa_x00e7__x00e3_oOperaciona",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Observação Operacional",
+              "readOnly": false,
+              "required": false,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "StatusOperacional",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "StatusOperacional",
+              "readOnly": false,
+              "required": false,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Aguardando",
+                  "value": "Aguardando"
+                },
+                {
+                  "name": "Placa Retirada",
+                  "value": "Placa Retirada"
+                },
+                {
+                  "name": "Placa Não Retirada",
+                  "value": "Placa Não Retirada"
+                },
+                {
+                  "name": "Aguardando Observação",
+                  "value": "Aguardando Observação"
+                }
+              ],
+              "removed": false
+            },
+            {
+              "id": "id",
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "ID",
+              "readOnly": true,
+              "required": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "requestOptions": {}
+      },
+      "id": "387d1d23-cc21-4c2e-a87e-8801f7746573",
+      "name": "Update item in a list",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "position": [
+        224,
+        48
+      ],
+      "credentials": {
+        "microsoftSharePointOAuth2Api": {
+          "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/sendPoll",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"session\": \"automacao_encerramento_and_adesao\",\n  \"chatId\": \"<<PREENCHER>>\",\n  \"poll\": {\n    \"name\": \"🖥️ RETIRADA DE SISTEMAS\\n\\n👤 Nome: {{ $('Entrada Operacional').item.json.nomeCliente }}\\n📍 Endereço: {{ $('Entrada Operacional').item.json.endereco }}\\n📝 Motivo: {{ $('Entrada Operacional').item.json.motivo }}\\n📧 E-mail: {{ $('Entrada Operacional').item.json.email }}\\n📞 Telefone: {{ $('Entrada Operacional').item.json.telefone }}\\n📅 Aviso Prévio: {{ $('Entrada Operacional').item.json.avisoPrevioFormatado }}\\n\\nFavor retirar o cliente de todos os sistemas.\\n\\nConfirme quando a retirada estiver concluída.\",\n    \"options\": [\n      \"✅ Retirado dos Sistemas\",\n      \"⏳ Ainda não retirado\"\n    ],\n    \"multipleAnswers\": false\n  }\n}",
+        "options": {}
+      },
+      "id": "cded1b52-05fc-41e2-ae55-211121f7af70",
+      "name": "Enviar Confirmação para Sistemas",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        448,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "={{ 'encerramento:sistemas:' + $('Enviar Confirmação para Sistemas').item.json.id.split('_').pop() }}",
+        "value": "={{ $('Entrada Operacional').item.json.itemId }}"
+      },
+      "id": "17d4c84a-59c0-443e-b48c-ceb7f9722f5a",
+      "name": "Receber Cliente do Encerramento1",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        672,
+        144
+      ],
+      "credentials": {
+        "redis": {
+          "name": "<<CRIAR CREDENCIAL redis>>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "item",
+        "operation": "update",
+        "site": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Gestão Operacional"
+        },
+        "list": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Encerramento de Contrato"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Entrada Operacional').item.json.itemId }}",
+            "PollKeyOperacional": "={{ String($('Enviar Enquete Para Coordenador Operacional').item.json.id).split('_').pop() }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "PollKeyOperacional",
+              "displayName": "PollKeyOperacional",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "requestOptions": {}
+      },
+      "id": "fb5c0099-c7df-4b4d-8897-f480aad1212a",
+      "name": "Salvar PollKey Operacional",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "position": [
+        896,
+        -48
+      ],
+      "credentials": {
+        "microsoftSharePointOAuth2Api": {
+          "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "resource": "item",
+        "operation": "update",
+        "site": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Gestão Operacional"
+        },
+        "list": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Encerramento de Contrato"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Entrada Operacional').item.json.itemId }}",
+            "PollKeySistemas": "={{ String($('Enviar Confirmação para Sistemas').item.json.id).split('_').pop() }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "PollKeySistemas",
+              "displayName": "PollKeySistemas",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "requestOptions": {}
+      },
+      "id": "45869fc2-5127-4771-a8ae-1e79edd03c2b",
+      "name": "Salvar PollKey Sistemas",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "position": [
+        896,
+        144
+      ],
+      "credentials": {
+        "microsoftSharePointOAuth2Api": {
+          "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Entrada Operacional": {
+      "main": [
+        [
+          {
+            "node": "Update item in a list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Enquete Para Coordenador Operacional": {
+      "main": [
+        [
+          {
+            "node": "Receber Cliente do Encerramento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update item in a list": {
+      "main": [
+        [
+          {
+            "node": "Enviar Enquete Para Coordenador Operacional",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Enviar Confirmação para Sistemas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Confirmação para Sistemas": {
+      "main": [
+        [
+          {
+            "node": "Receber Cliente do Encerramento1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receber Cliente do Encerramento": {
+      "main": [
+        [
+          {
+            "node": "Salvar PollKey Operacional",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receber Cliente do Encerramento1": {
+      "main": [
+        [
+          {
+            "node": "Salvar PollKey Sistemas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "tags": []
+}

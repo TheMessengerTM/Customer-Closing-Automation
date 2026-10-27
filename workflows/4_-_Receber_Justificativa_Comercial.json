@@ -1,0 +1,627 @@
+{
+  "name": "4 - Receber Justificativa Comercial",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "Observacao-Comercial",
+        "options": {}
+      },
+      "id": "46764e97-1ce6-4e74-82fa-e3cc3df5d1b2",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -896,
+        -752
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "58d4ce9b-229a-4c7e-9a38-cfcd0223e186",
+              "name": "justificativa",
+              "value": "={{ String($json.body?.justificativa ?? $json.body?.payload?.body ?? '').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "0720d43f-68ce-460a-8eca-6c9fb008e551",
+              "name": "telefone",
+              "value": "={{ String($json.body?.payload?._data?.Info?.SenderAlt || $json.body?.payload?.from || '').split('@')[0] }}",
+              "type": "string"
+            },
+            {
+              "id": "2ce0e35a-5508-4afc-a7b9-cea9bd83f99d",
+              "name": "itemIdDireto",
+              "value": "={{ $json.headers?.['x-aster-sync'] === '<<PREENCHER>>' ? String($json.body?.itemId ?? '') : '' }}",
+              "type": "string"
+            },
+            {
+              "id": "6e688784-d3e6-4f7a-8564-eaf905d4038a",
+              "name": "valida",
+              "value": "={{ ($json.headers?.['x-aster-sync'] === '<<PREENCHER>>' && !!$json.body?.itemId) || (String($json.body?.payload?._data?.Info?.SenderAlt || $json.body?.payload?.from || '').split('@')[0] === '5511999999999' && $json.body?.payload?.fromMe !== true && String($json.body?.payload?.body ?? '').trim() !== '') }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8eaeae55-55ff-4869-810e-c15807234bf8",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -672,
+        -752
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "505785c2-8572-49f4-b6a3-8a77c57684b5",
+              "leftValue": "={{ $json.valida }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ed650beb-2b0a-428a-bf64-55cf4a3a48b1",
+      "name": "Mensagem Válida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -448,
+        -752
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "item",
+        "site": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Gestão Operacional"
+        },
+        "list": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Encerramento de Contrato"
+        },
+        "filter": "fields/Processamento eq 'Aguardando Comercial'",
+        "limit": 100,
+        "options": {
+          "fields": [
+            "fields"
+          ]
+        },
+        "simplify": false,
+        "requestOptions": {}
+      },
+      "id": "4375e617-e4fc-448c-9099-4abf0f25b0ba",
+      "name": "Buscar Pendentes Comercial",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        -864
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "microsoftSharePointOAuth2Api": {
+          "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Escolhe o cliente que vai receber a justificativa.\n// - Veio do Lists (itemIdDireto): usa exatamente esse item, se ainda estiver pendente.\n// - Veio do WhatsApp: usa o pendente mais antigo desta área.\nconst e = $('Edit Fields').first().json;\nconst pend = $input.all().map(i => i.json)\n  .filter(j => j && j.id && j.fields && j.fields.StatusComercial === 'Aguardando Observação');\nif (!pend.length) return [];\nlet alvo;\nif (e.itemIdDireto) {\n  alvo = pend.find(j => String(j.id) === String(e.itemIdDireto));\n} else {\n  const data = j => new Date(j.fields.DataRespostaComercial || j.fields.Modified || 0).getTime();\n  alvo = pend.sort((a, b) => data(a) - data(b))[0];\n}\nif (!alvo) return [];\nreturn [{ json: {\n  itemIdSharePoint: String(alvo.id),\n  cliente: alvo.fields.NomedoCliente || '',\n  endereco: alvo.fields.Title || '',\n  restantes: pend.length - 1\n} }];"
+      },
+      "id": "758266a6-e5ce-4ae5-a9cb-dcea7d333ccf",
+      "name": "Identificar Item",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -16,
+        -864
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "item",
+        "operation": "update",
+        "site": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Gestão Operacional"
+        },
+        "list": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Encerramento de Contrato"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Identificar Item').item.json.itemIdSharePoint }}",
+            "Observa_x00e7__x00e3_oComercial": "={{ $('Edit Fields').item.json.justificativa }}",
+            "StatusComercial": "Não Recuperado"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "requestOptions": {}
+      },
+      "id": "1b653d9f-bfc3-44a2-ac10-0656d5291f36",
+      "name": "Update item in a list",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "position": [
+        208,
+        -864
+      ],
+      "credentials": {
+        "microsoftSharePointOAuth2Api": {
+          "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "item",
+        "operation": "get",
+        "site": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Gestão Operacional"
+        },
+        "list": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Encerramento de Contrato"
+        },
+        "item": {
+          "__rl": true,
+          "value": "={{ $('Identificar Item').item.json.itemIdSharePoint }}",
+          "mode": "id"
+        },
+        "simplify": false,
+        "requestOptions": {}
+      },
+      "id": "553b0d07-fbfd-4999-b8f1-8581afcf5cb6",
+      "name": "Get an item",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "position": [
+        432,
+        -864
+      ],
+      "credentials": {
+        "microsoftSharePointOAuth2Api": {
+          "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3c10abc7-e152-4166-bb11-9efc0dca7fe3",
+              "leftValue": "={{\nDateTime.fromISO($('Get an item').item.json.fields.AvisoPrevio)\n.setZone('America/Sao_Paulo').startOf('day').toMillis()\n<=\n$now.setZone('America/Sao_Paulo').startOf('day').toMillis()\n}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5812801c-520f-4011-813b-b70b49111cbb",
+      "name": "Aviso Prévio já venceu?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        656,
+        -864
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "item",
+        "operation": "update",
+        "site": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Gestão Operacional"
+        },
+        "list": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Encerramento de Contrato"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Identificar Item').item.json.itemIdSharePoint }}",
+            "Processamento": "Aguardando Operacional"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "requestOptions": {}
+      },
+      "id": "f7c98c7c-91df-4d74-b5b0-7d146bd2db4b",
+      "name": "Atualizar para Aguardando Operacional",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "position": [
+        880,
+        -976
+      ],
+      "credentials": {
+        "microsoftSharePointOAuth2Api": {
+          "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "item",
+        "operation": "get",
+        "site": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Gestão Operacional"
+        },
+        "list": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Encerramento de Contrato"
+        },
+        "item": {
+          "__rl": true,
+          "value": "={{ $('Identificar Item').item.json.itemIdSharePoint }}",
+          "mode": "id"
+        },
+        "simplify": false,
+        "requestOptions": {}
+      },
+      "id": "85b8907f-4bf5-4efa-be76-af5442d85146",
+      "name": "Buscar Dados Para Operacional",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        -976
+      ],
+      "credentials": {
+        "microsoftSharePointOAuth2Api": {
+          "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6620329f-a047-4e36-98f4-b8837afeca76",
+              "name": "itemId",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "a586293f-50a7-4629-8dee-d5bf92d81702",
+              "name": "nomeCliente",
+              "value": "={{ $json.fields.NomedoCliente }}",
+              "type": "string"
+            },
+            {
+              "id": "20edf1bb-16c6-43e4-af38-0438bdbefda3",
+              "name": "endereco",
+              "value": "={{ $json.fields.Title }}",
+              "type": "string"
+            },
+            {
+              "id": "c3417195-e0a1-452e-a488-3c278d0c3b11",
+              "name": "telefone",
+              "value": "={{ $json.fields.ContatodoCliente }}",
+              "type": "string"
+            },
+            {
+              "id": "26a35040-79a3-4174-be14-975143744309",
+              "name": "email",
+              "value": "={{ $json.fields.E_x002d_MaildoCliente }}",
+              "type": "string"
+            },
+            {
+              "id": "22da9d80-178d-4381-8e5f-ca6460975aa6",
+              "name": "motivo",
+              "value": "={{ $json.fields.Motivo }}",
+              "type": "string"
+            },
+            {
+              "id": "3bde7e72-92ec-4793-95b5-52d7021bbf32",
+              "name": "avisoPrevio",
+              "value": "={{ $json.fields.AvisoPrevio }}",
+              "type": "string"
+            },
+            {
+              "id": "d64548a9-31d1-4a1e-8b85-baf783454676",
+              "name": "avisoPrevioFormatado",
+              "value": "={{ DateTime.fromISO($json.fields.AvisoPrevio).setZone('America/Sao_Paulo').toFormat('dd/MM/yyyy') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "127d704d-f716-4c1c-ae27-38b3b57b1587",
+      "name": "Preparar Dados Para Operacional",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1328,
+        -976
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "6 - Enviar Encerramento ao Operacional"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "id": "63b742bd-7c87-4363-b528-1a229a3082e6",
+      "name": "Call 'Enviar Encerramento ao Operacional'",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1552,
+        -976
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "item",
+        "operation": "update",
+        "site": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Gestão Operacional"
+        },
+        "list": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Encerramento de Contrato"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Identificar Item').item.json.itemIdSharePoint }}",
+            "Processamento": "Aguardando Aviso Prévio"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "requestOptions": {}
+      },
+      "id": "5ac7c69e-3838-42b6-a081-4c1a41e115c7",
+      "name": "Atualizar para Aguardando Aviso Prévio",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "position": [
+        880,
+        -752
+      ],
+      "credentials": {
+        "microsoftSharePointOAuth2Api": {
+          "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Mensagem Válida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensagem Válida?": {
+      "main": [
+        [
+          {
+            "node": "Buscar Pendentes Comercial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Pendentes Comercial": {
+      "main": [
+        [
+          {
+            "node": "Identificar Item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Identificar Item": {
+      "main": [
+        [
+          {
+            "node": "Update item in a list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update item in a list": {
+      "main": [
+        [
+          {
+            "node": "Get an item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get an item": {
+      "main": [
+        [
+          {
+            "node": "Aviso Prévio já venceu?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aviso Prévio já venceu?": {
+      "main": [
+        [
+          {
+            "node": "Atualizar para Aguardando Operacional",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Atualizar para Aguardando Aviso Prévio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar para Aguardando Operacional": {
+      "main": [
+        [
+          {
+            "node": "Buscar Dados Para Operacional",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Dados Para Operacional": {
+      "main": [
+        [
+          {
+            "node": "Preparar Dados Para Operacional",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Dados Para Operacional": {
+      "main": [
+        [
+          {
+            "node": "Call 'Enviar Encerramento ao Operacional'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "tags": []
+}

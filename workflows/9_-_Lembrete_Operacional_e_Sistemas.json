@@ -1,0 +1,241 @@
+{
+  "name": "9 - Lembrete Operacional e Sistemas",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "316d5111-6645-4b66-9a8f-aa805aa4b3cd",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "6a86fb2d-aa75-4a88-8e7a-9699a9192bc8",
+              "leftValue": "={{ $json.fields.StatusOperacional }}",
+              "rightValue": "Placa Retirada",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "df5f59e5-054f-4f8b-91b4-586f451b435f",
+              "leftValue": "={{ $json.fields.StatusOperacional }}",
+              "rightValue": "Placa Não Retirada",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7aa04034-9c87-42ab-a609-1a6f8f1f1edf",
+      "name": "Filtrar Pendência Operacional",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f6b918d3-98e2-429f-86c4-c35511962f0d",
+              "leftValue": "={{ $json.fields.RetiradodoFindMe_x003f_ }}",
+              "rightValue": "Pendente",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d97ec2b5-4d32-40c8-9bf7-86739b9de4c5",
+      "name": "Filtrar Pendência Sistemas",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "item",
+        "site": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Gestão Operacional"
+        },
+        "list": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Encerramento de Contrato"
+        },
+        "filter": "fields/Processamento eq 'Aguardando Operacional e Sistemas' or fields/Processamento eq 'Aguardando Operacional' or fields/Processamento eq 'Aguardando Sistemas'",
+        "limit": 100,
+        "options": {
+          "fields": [
+            "fields"
+          ]
+        },
+        "simplify": false,
+        "requestOptions": {}
+      },
+      "id": "a20ee193-92c2-4286-9256-4d932d284986",
+      "name": "Buscar Clientes Aguardando Operacional",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "position": [
+        224,
+        -48
+      ],
+      "credentials": {
+        "microsoftSharePointOAuth2Api": {
+          "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/sendText",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"session\": \"automacao_encerramento_and_adesao\",\n  \"chatId\": \"<<PREENCHER>>\",\n  \"text\": \"🔔 LEMBRETE DE ENCERRAMENTO\\n\\n👤 Nome: {{ $json.fields.NomedoCliente }}\\n📍 Endereço: {{ $json.fields.Title }}\\n📝 Motivo: {{ $json.fields.Motivo }}\\n📧 E-mail: {{ $json.fields.E_x002d_MaildoCliente }}\\n📞 Telefone: {{ $json.fields.ContatodoCliente }}\\n📅 Aviso Prévio: {{ DateTime.fromISO($json.fields.AvisoPrevio).setZone('America/Sao_Paulo').toFormat('dd/MM/yyyy') }}\\n\\nAinda estamos aguardando a confirmação sobre a retirada da placa.\\n\\nPor favor, responda à enquete enviada anteriormente informando se a placa foi retirada ou não.\"\n}",
+        "options": {}
+      },
+      "id": "01b8d12c-97f0-4b72-a5a8-34f898385b02",
+      "name": "Enviar Lembrete Operacional",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        672,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/sendText",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"session\": \"automacao_encerramento_and_adesao\",\n  \"chatId\": \"<<PREENCHER>>\",\n  \"text\": \"🔔 LEMBRETE DE ENCERRAMENTO\\n\\n👤 Nome: {{ $json.fields.NomedoCliente }}\\n📍 Endereço: {{ $json.fields.Title }}\\n📝 Motivo: {{ $json.fields.Motivo }}\\n📧 E-mail: {{ $json.fields.E_x002d_MaildoCliente }}\\n📞 Telefone: {{ $json.fields.ContatodoCliente }}\\n📅 Aviso Prévio: {{ DateTime.fromISO($json.fields.AvisoPrevio).setZone('America/Sao_Paulo').toFormat('dd/MM/yyyy') }}\\n\\nA retirada deste cliente dos sistemas ainda está pendente.\\n\\nPor favor, realize a retirada e, após a conclusão, responda à enquete enviada anteriormente com ✅ Retirado dos Sistemas.\"\n}",
+        "options": {}
+      },
+      "id": "bf5cd8de-0fb5-4832-a5eb-75ab10c275b3",
+      "name": "Enviar Lembrete Sistemas",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        672,
+        48
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Buscar Clientes Aguardando Operacional",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Clientes Aguardando Operacional": {
+      "main": [
+        [
+          {
+            "node": "Filtrar Pendência Operacional",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Filtrar Pendência Sistemas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Pendência Operacional": {
+      "main": [
+        [
+          {
+            "node": "Enviar Lembrete Operacional",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Pendência Sistemas": {
+      "main": [
+        [
+          {
+            "node": "Enviar Lembrete Sistemas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "tags": []
+}

@@ -1,0 +1,1071 @@
+{
+  "name": "3 - Webhook de Mensagem do Comercial",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "Resposta-Enquete-Comercial",
+        "options": {}
+      },
+      "id": "64ae8c87-3f19-4414-885b-335ae3a1f8d4",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "38721f57-e6fb-4eac-939b-28fdc4836b7a",
+              "name": "EventoID",
+              "value": "={{ $json.body.payload.poll.id }}",
+              "type": "string"
+            },
+            {
+              "id": "cd5cffcb-33ef-4f08-9063-46078d609d6a",
+              "name": "EventoKey",
+              "value": "={{ $json.body.payload.poll.id.split('_').pop() }}",
+              "type": "string"
+            },
+            {
+              "id": "bc0a9cf2-35cf-411c-94dc-dd5a190b2173",
+              "name": "Resposta",
+              "value": "={{ $json.body.payload.vote.selectedOptions[0] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "129971ad-3f1d-4cb3-ba81-3cf46e12cae5",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "item",
+        "operation": "update",
+        "site": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Gestão Operacional"
+        },
+        "list": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Encerramento de Contrato"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Armazenar Resposta').item.json.itemIdSharePoint }}",
+            "ClienteRecuperado": "Recuperado",
+            "Processamento": "Cliente Recuperado",
+            "RetiradodoFindMe_x003f_": "=Não Retirar",
+            "PlacaRemovida": "=Não Retirar",
+            "StatusComercial": "Recuperado",
+            "DataRespostaComercial": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "Title",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Título",
+              "readOnly": false,
+              "required": false,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "NomedoCliente",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Nome do Cliente",
+              "readOnly": false,
+              "required": false,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "ContatodoCliente",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Telefone do Cliente",
+              "readOnly": false,
+              "required": false,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "PlacaRemovida",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Placa",
+              "readOnly": false,
+              "required": false,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Pendente",
+                  "value": "Pendente"
+                },
+                {
+                  "name": "Retirada",
+                  "value": "Retirada"
+                },
+                {
+                  "name": "Não Retirada",
+                  "value": "Não Retirada"
+                }
+              ],
+              "removed": false
+            },
+            {
+              "id": "ClienteRecuperado",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Cliente",
+              "readOnly": false,
+              "required": false,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Recuperado",
+                  "value": "Recuperado"
+                },
+                {
+                  "name": "Não Recuperado",
+                  "value": "Não Recuperado"
+                },
+                {
+                  "name": "Pendente",
+                  "value": "Pendente"
+                }
+              ],
+              "removed": false
+            },
+            {
+              "id": "RetiradodoFindMe_x003f_",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Sistemas",
+              "readOnly": false,
+              "required": false,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Retirado",
+                  "value": "Retirado"
+                },
+                {
+                  "name": "Pendente",
+                  "value": "Pendente"
+                }
+              ],
+              "removed": false
+            },
+            {
+              "id": "Motivo",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Motivo",
+              "readOnly": false,
+              "required": false,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "E_x002d_MaildoCliente",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "E-Mail do Cliente",
+              "readOnly": false,
+              "required": false,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "Processamento",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "StatusAutomacao",
+              "readOnly": false,
+              "required": false,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Pendente",
+                  "value": "Pendente"
+                },
+                {
+                  "name": "Aguardando Comercial",
+                  "value": "Aguardando Comercial"
+                },
+                {
+                  "name": "Aguardando Aviso Prévio",
+                  "value": "Aguardando Aviso Prévio"
+                },
+                {
+                  "name": "Aguardando Operacional",
+                  "value": "Aguardando Operacional"
+                },
+                {
+                  "name": "Cliente Recuperado",
+                  "value": "Cliente Recuperado"
+                },
+                {
+                  "name": "Concluído",
+                  "value": "Concluído"
+                }
+              ],
+              "removed": false
+            },
+            {
+              "id": "AvisoPrevio",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Aviso Previo",
+              "readOnly": false,
+              "required": false,
+              "type": "dateTime",
+              "removed": true
+            },
+            {
+              "id": "StatusComercial",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "StatusComercial",
+              "readOnly": false,
+              "required": false,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Aguardando",
+                  "value": "Aguardando"
+                },
+                {
+                  "name": "Recuperado",
+                  "value": "Recuperado"
+                },
+                {
+                  "name": "Não Recuperado",
+                  "value": "Não Recuperado"
+                },
+                {
+                  "name": "Prazo Expirado",
+                  "value": "Prazo Expirado"
+                },
+                {
+                  "name": "Aguardando Observação",
+                  "value": "Aguardando Observação"
+                }
+              ],
+              "removed": false
+            },
+            {
+              "id": "DataInicioComercial",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "DataInicioComercial",
+              "readOnly": false,
+              "required": false,
+              "type": "dateTime",
+              "removed": true
+            },
+            {
+              "id": "DataLimiteComercial",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "DataLimiteComercial",
+              "readOnly": false,
+              "required": false,
+              "type": "dateTime",
+              "removed": true
+            },
+            {
+              "id": "DataRespostaComercial",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "DataRespostaComercial",
+              "readOnly": false,
+              "required": false,
+              "type": "dateTime",
+              "removed": false
+            },
+            {
+              "id": "PollKeyComercial",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "PollKeyComercial",
+              "readOnly": false,
+              "required": false,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "Observa_x00e7__x00e3_oComercial",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Observação Comercial",
+              "readOnly": false,
+              "required": false,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "Observa_x00e7__x00e3_oOperaciona",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Observação Operacional",
+              "readOnly": false,
+              "required": false,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "StatusOperacional",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "StatusOperacional",
+              "readOnly": false,
+              "required": false,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Aguardando",
+                  "value": "Aguardando"
+                },
+                {
+                  "name": "Placa Retirada",
+                  "value": "Placa Retirada"
+                },
+                {
+                  "name": "Placa Não Retirada",
+                  "value": "Placa Não Retirada"
+                },
+                {
+                  "name": "Aguardando Observação",
+                  "value": "Aguardando Observação"
+                }
+              ],
+              "removed": true
+            },
+            {
+              "id": "id",
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "ID",
+              "readOnly": true,
+              "required": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "requestOptions": {}
+      },
+      "id": "f8783506-0171-4dbf-b794-2fafcdedec8e",
+      "name": "Atualizar item se for Recuperado",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        -272
+      ],
+      "credentials": {
+        "microsoftSharePointOAuth2Api": {
+          "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "itemIdSharePoint",
+        "key": "={{ 'encerramento:poll:' + $json.EventoKey }}",
+        "options": {}
+      },
+      "id": "ae92cc62-8a5d-4cd4-b8b6-04ebdb6ac569",
+      "name": "Armazenar Resposta",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        448,
+        -176
+      ],
+      "credentials": {
+        "redis": {
+          "name": "<<CRIAR CREDENCIAL redis>>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Edit Fields').item.json.Resposta }}",
+                    "rightValue": "✅ Cliente Recuperado",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "f631b9ff-11de-4102-a7f5-cab3ef37db3c"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Cliente Recuperado"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "ef7cfbdb-bd88-4030-bd35-4d9bb3fe2010",
+                    "leftValue": "={{ $('Edit Fields').item.json.Resposta }}",
+                    "rightValue": "❌ Cliente Não Recuperado",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Cliente Não Recuperado"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9d5bd269-0810-4834-9698-ccaf1247b9ce",
+      "name": "Condição",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'encerramento:poll:' + $('Edit Fields').item.json.EventoKey }}"
+      },
+      "id": "aeae9b52-cefe-4691-95c2-213b36641b2f",
+      "name": "Deletar Chaves",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        -272
+      ],
+      "credentials": {
+        "redis": {
+          "name": "<<CRIAR CREDENCIAL redis>>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "item",
+        "operation": "update",
+        "site": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Gestão Operacional"
+        },
+        "list": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Encerramento de Contrato"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Armazenar Resposta').item.json.itemIdSharePoint }}",
+            "StatusComercial": "Aguardando Observação",
+            "ClienteRecuperado": "Não Recuperado",
+            "DataRespostaComercial": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "Title",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Título",
+              "readOnly": false,
+              "required": false,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "NomedoCliente",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Nome do Cliente",
+              "readOnly": false,
+              "required": false,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "ContatodoCliente",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Telefone do Cliente",
+              "readOnly": false,
+              "required": false,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "PlacaRemovida",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Placa",
+              "readOnly": false,
+              "required": false,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Removida",
+                  "value": "Removida"
+                },
+                {
+                  "name": "Não Retirar",
+                  "value": "Não Retirar"
+                },
+                {
+                  "name": "Pendente",
+                  "value": "Pendente"
+                }
+              ],
+              "removed": true
+            },
+            {
+              "id": "ClienteRecuperado",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Cliente",
+              "readOnly": false,
+              "required": false,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Recuperado",
+                  "value": "Recuperado"
+                },
+                {
+                  "name": "Não Recuperado",
+                  "value": "Não Recuperado"
+                },
+                {
+                  "name": "Pendente",
+                  "value": "Pendente"
+                }
+              ],
+              "removed": false
+            },
+            {
+              "id": "RetiradodoFindMe_x003f_",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Sistemas",
+              "readOnly": false,
+              "required": false,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Retirar",
+                  "value": "Retirar"
+                },
+                {
+                  "name": "Não Retirar",
+                  "value": "Não Retirar"
+                },
+                {
+                  "name": "Pendente",
+                  "value": "Pendente"
+                }
+              ],
+              "removed": true
+            },
+            {
+              "id": "Motivo",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Motivo",
+              "readOnly": false,
+              "required": false,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "E_x002d_MaildoCliente",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "E-Mail do Cliente",
+              "readOnly": false,
+              "required": false,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "Processamento",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "StatusAutomacao",
+              "readOnly": false,
+              "required": false,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Pendente",
+                  "value": "Pendente"
+                },
+                {
+                  "name": "Aguardando Comercial",
+                  "value": "Aguardando Comercial"
+                },
+                {
+                  "name": "Aguardando Aviso Prévio",
+                  "value": "Aguardando Aviso Prévio"
+                },
+                {
+                  "name": "Aguardando Operacional",
+                  "value": "Aguardando Operacional"
+                },
+                {
+                  "name": "Cliente Recuperado",
+                  "value": "Cliente Recuperado"
+                },
+                {
+                  "name": "Concluído",
+                  "value": "Concluído"
+                }
+              ],
+              "removed": true
+            },
+            {
+              "id": "AvisoPrevio",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Aviso Previo",
+              "readOnly": false,
+              "required": false,
+              "type": "dateTime",
+              "removed": true
+            },
+            {
+              "id": "StatusComercial",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "StatusComercial",
+              "readOnly": false,
+              "required": false,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Aguardando",
+                  "value": "Aguardando"
+                },
+                {
+                  "name": "Recuperado",
+                  "value": "Recuperado"
+                },
+                {
+                  "name": "Não Recuperado",
+                  "value": "Não Recuperado"
+                },
+                {
+                  "name": "Prazo Expirado",
+                  "value": "Prazo Expirado"
+                },
+                {
+                  "name": "Aguardando Observação",
+                  "value": "Aguardando Observação"
+                }
+              ],
+              "removed": false
+            },
+            {
+              "id": "DataInicioComercial",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "DataInicioComercial",
+              "readOnly": false,
+              "required": false,
+              "type": "dateTime",
+              "removed": true
+            },
+            {
+              "id": "DataLimiteComercial",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "DataLimiteComercial",
+              "readOnly": false,
+              "required": false,
+              "type": "dateTime",
+              "removed": true
+            },
+            {
+              "id": "DataRespostaComercial",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "DataRespostaComercial",
+              "readOnly": false,
+              "required": false,
+              "type": "dateTime",
+              "removed": false
+            },
+            {
+              "id": "PollKeyComercial",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "PollKeyComercial",
+              "readOnly": false,
+              "required": false,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "Observa_x00e7__x00e3_oComercial",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Observação Comercial",
+              "readOnly": false,
+              "required": false,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "Observa_x00e7__x00e3_oOperaciona",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Observação Operacional",
+              "readOnly": false,
+              "required": false,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "id",
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "ID",
+              "readOnly": true,
+              "required": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "requestOptions": {}
+      },
+      "id": "5871cf4e-d718-4ab6-9d4e-058ab796759c",
+      "name": "Atualizar Status Comercial para Aguardando Observação",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        -80
+      ],
+      "credentials": {
+        "microsoftSharePointOAuth2Api": {
+          "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "={{ 'encerramento:justificativa-comercial:' + String($('Pedir Justificativa').item.json.id ?? $('Pedir Justificativa').item.json._data?.Info?.ID ?? '').split('_').pop() }}",
+        "value": "={{ $('Atualizar Status Comercial para Aguardando Observação').item.json.id }}"
+      },
+      "id": "2c662d4b-3ae8-4daa-a846-732cb02b9c8c",
+      "name": "Redis",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        -80
+      ],
+      "credentials": {
+        "redis": {
+          "name": "<<CRIAR CREDENCIAL redis>>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/sendText",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"session\": \"automacao_encerramento_and_adesao\",\n  \"chatId\": \"<<PREENCHER>>\",\n  \"text\": \"📝 JUSTIFICATIVA COMERCIAL\\n\\n👤 Nome: {{ $json.fields.NomedoCliente }}\\n📍 Endereço: {{ $json.fields.Title }}\\n📝 Motivo: {{ $json.fields.Motivo }}\\n📧 E-mail: {{ $json.fields.E_x002d_MaildoCliente }}\\n📞 Telefone: {{ $json.fields.ContatodoCliente }}\\n📅 Aviso Prévio: {{ DateTime.fromISO($json.fields.AvisoPrevio).setZone('America/Sao_Paulo').toFormat('dd/MM/yyyy') }}\\n\\nO cliente foi marcado como NÃO RECUPERADO.\\n\\nPor favor, informe o motivo pelo qual não foi possível recuperar o cliente.\\n\\n✍️ Envie a justificativa nesta conversa\"\n}",
+        "options": {}
+      },
+      "id": "aa16478e-49b9-4763-b37d-fcd21e2205c3",
+      "name": "Pedir Justificativa",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1344,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'encerramento:poll:' + $('Edit Fields').item.json.EventoKey }}"
+      },
+      "id": "0c8ea188-2d34-4f42-aff5-f76e550dcc1a",
+      "name": "Redis1",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1792,
+        -80
+      ],
+      "credentials": {
+        "redis": {
+          "name": "<<CRIAR CREDENCIAL redis>>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "354c3058-1785-4b1a-8414-c31999ee4866",
+              "leftValue": "={{ $json.itemIdSharePoint }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d27b47b5-105f-4570-b3e6-fb5e73fbb91a",
+      "name": "Enquete Encontrada?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        -176
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Armazenar Resposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar item se for Recuperado": {
+      "main": [
+        [
+          {
+            "node": "Deletar Chaves",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armazenar Resposta": {
+      "main": [
+        [
+          {
+            "node": "Enquete Encontrada?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Condição": {
+      "main": [
+        [
+          {
+            "node": "Atualizar item se for Recuperado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Atualizar Status Comercial para Aguardando Observação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Status Comercial para Aguardando Observação": {
+      "main": [
+        [
+          {
+            "node": "Pedir Justificativa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis": {
+      "main": [
+        [
+          {
+            "node": "Redis1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pedir Justificativa": {
+      "main": [
+        [
+          {
+            "node": "Redis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enquete Encontrada?": {
+      "main": [
+        [
+          {
+            "node": "Condição",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "tags": []
+}

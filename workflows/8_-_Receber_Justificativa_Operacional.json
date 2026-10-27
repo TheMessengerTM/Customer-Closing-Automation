@@ -1,0 +1,463 @@
+{
+  "name": "8 - Receber Justificativa Operacional",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "Observacao-Operacional",
+        "options": {}
+      },
+      "id": "e9eb2bdf-5fae-4179-beb5-3ec0a952cabe",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -2384,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5e207a28-6722-4d99-827a-465ff39dbf93",
+              "name": "justificativa",
+              "value": "={{ String($json.body?.justificativa ?? $json.body?.payload?.body ?? '').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "74179bd0-34a8-4ac4-ad5d-1c7cf4f53e27",
+              "name": "telefone",
+              "value": "={{ String($json.body?.payload?._data?.Info?.SenderAlt || $json.body?.payload?.from || '').split('@')[0] }}",
+              "type": "string"
+            },
+            {
+              "id": "2ab7f601-8628-48ba-89f9-ac925bd9d36a",
+              "name": "itemIdDireto",
+              "value": "={{ $json.headers?.['x-aster-sync'] === '<<PREENCHER>>' ? String($json.body?.itemId ?? '') : '' }}",
+              "type": "string"
+            },
+            {
+              "id": "caed4940-9af4-4aa1-b063-f05af0359cf9",
+              "name": "valida",
+              "value": "={{ ($json.headers?.['x-aster-sync'] === '<<PREENCHER>>' && !!$json.body?.itemId) || (String($json.body?.payload?._data?.Info?.SenderAlt || $json.body?.payload?.from || '').split('@')[0] === '5511999999999' && $json.body?.payload?.fromMe !== true && String($json.body?.payload?.body ?? '').trim() !== '') }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e030aad1-5833-4fe7-a86a-50d47cfd912f",
+      "name": "Preparar Justificativa Operacional",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2160,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fb8a6810-b885-4a6b-bdf5-ea891e1a3fb5",
+              "leftValue": "={{ $json.valida }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "dd7c0871-a957-4dd2-8d37-07a47784c2c7",
+      "name": "Mensagem Válida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1936,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "item",
+        "site": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Gestão Operacional"
+        },
+        "list": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Encerramento de Contrato"
+        },
+        "filter": "fields/Processamento eq 'Aguardando Operacional e Sistemas' or fields/Processamento eq 'Aguardando Operacional'",
+        "limit": 100,
+        "options": {
+          "fields": [
+            "fields"
+          ]
+        },
+        "simplify": false,
+        "requestOptions": {}
+      },
+      "id": "f2ae61d9-e6fd-404c-b4a2-ae53f664a4ca",
+      "name": "Buscar Pendentes Operacional",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "position": [
+        -1680,
+        0
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "microsoftSharePointOAuth2Api": {
+          "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Escolhe o cliente que vai receber a justificativa.\n// - Veio do Lists (itemIdDireto): usa exatamente esse item, se ainda estiver pendente.\n// - Veio do WhatsApp: usa o pendente mais antigo desta área.\nconst e = $('Preparar Justificativa Operacional').first().json;\nconst pend = $input.all().map(i => i.json)\n  .filter(j => j && j.id && j.fields && j.fields.StatusOperacional === 'Aguardando Observação');\nif (!pend.length) return [];\nlet alvo;\nif (e.itemIdDireto) {\n  alvo = pend.find(j => String(j.id) === String(e.itemIdDireto));\n} else {\n  const data = j => new Date(j.fields.Modified || j.fields.Modified || 0).getTime();\n  alvo = pend.sort((a, b) => data(a) - data(b))[0];\n}\nif (!alvo) return [];\nreturn [{ json: {\n  itemIdSharePoint: String(alvo.id),\n  cliente: alvo.fields.NomedoCliente || '',\n  endereco: alvo.fields.Title || '',\n  restantes: pend.length - 1\n} }];"
+      },
+      "id": "401f408e-c1cf-4152-b5d6-ff3b0017ddc9",
+      "name": "Identificar Item",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1488,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "item",
+        "operation": "update",
+        "site": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Gestão Operacional"
+        },
+        "list": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Encerramento de Contrato"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Identificar Item').item.json.itemIdSharePoint }}",
+            "Observa_x00e7__x00e3_oOperaciona": "={{ $('Preparar Justificativa Operacional').item.json.justificativa }}",
+            "StatusOperacional": "Placa Não Retirada"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "requestOptions": {}
+      },
+      "id": "2961e9d5-8bf9-4abe-a58c-8f42ec4dcc11",
+      "name": "Salvar Justificativa Operacional",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "position": [
+        -1264,
+        0
+      ],
+      "credentials": {
+        "microsoftSharePointOAuth2Api": {
+          "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "item",
+        "operation": "get",
+        "site": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Gestão Operacional"
+        },
+        "list": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Encerramento de Contrato"
+        },
+        "item": {
+          "__rl": true,
+          "value": "={{ $('Identificar Item').item.json.itemIdSharePoint }}",
+          "mode": "id"
+        },
+        "simplify": false,
+        "requestOptions": {}
+      },
+      "id": "d30ea06b-ec6a-419a-9a7c-c5087f108ed1",
+      "name": "Buscar Status Após Justificativa",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "position": [
+        -1040,
+        0
+      ],
+      "credentials": {
+        "microsoftSharePointOAuth2Api": {
+          "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d1e10a11-5744-4aaf-bb8a-f2596605df56",
+              "leftValue": "={{ $json.fields.RetiradodoFindMe_x003f_ }}",
+              "rightValue": "Retirado",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "340ac203-da5f-464b-8075-c133b9c16101",
+      "name": "Sistemas Retirados?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -816,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "item",
+        "operation": "update",
+        "site": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Gestão Operacional"
+        },
+        "list": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Encerramento de Contrato"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Identificar Item').item.json.itemIdSharePoint }}",
+            "Processamento": "Concluído"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "requestOptions": {}
+      },
+      "id": "6fbae56d-dba3-4bf9-9c24-d37db976213c",
+      "name": "Concluir Encerramento",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        -112
+      ],
+      "credentials": {
+        "microsoftSharePointOAuth2Api": {
+          "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "item",
+        "operation": "update",
+        "site": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Gestão Operacional"
+        },
+        "list": {
+          "__rl": true,
+          "value": "<<PREENCHER>>",
+          "mode": "list",
+          "cachedResultName": "Encerramento de Contrato"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Identificar Item').item.json.itemIdSharePoint }}",
+            "Processamento": "Aguardando Sistemas"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "requestOptions": {}
+      },
+      "id": "ed08d681-52b3-4b1e-b555-1f66788519fe",
+      "name": "Aguardar Sistemas",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        112
+      ],
+      "credentials": {
+        "microsoftSharePointOAuth2Api": {
+          "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Preparar Justificativa Operacional",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Justificativa Operacional": {
+      "main": [
+        [
+          {
+            "node": "Mensagem Válida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensagem Válida?": {
+      "main": [
+        [
+          {
+            "node": "Buscar Pendentes Operacional",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Pendentes Operacional": {
+      "main": [
+        [
+          {
+            "node": "Identificar Item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Identificar Item": {
+      "main": [
+        [
+          {
+            "node": "Salvar Justificativa Operacional",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar Justificativa Operacional": {
+      "main": [
+        [
+          {
+            "node": "Buscar Status Após Justificativa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Status Após Justificativa": {
+      "main": [
+        [
+          {
+            "node": "Sistemas Retirados?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sistemas Retirados?": {
+      "main": [
+        [
+          {
+            "node": "Concluir Encerramento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Aguardar Sistemas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "tags": []
+}
