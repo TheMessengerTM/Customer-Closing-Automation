@@ -1,7 +1,19 @@
 {
   "name": "10 - Sincronizar Alterações do Lists",
+  "description": null,
+  "active": false,
+  "versionCounter": 29,
+  "sourceWorkflowId": null,
   "nodes": [
     {
+      "id": "615f7734-b992-44b1-862d-8a6d806cb30d",
+      "name": "A Cada 30 Segundos",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1296,
+        -560
+      ],
       "parameters": {
         "rule": {
           "interval": [
@@ -10,17 +22,20 @@
             }
           ]
         }
-      },
-      "id": "615f7734-b992-44b1-862d-8a6d806cb30d",
-      "name": "A Cada 30 Segundos",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.3,
-      "position": [
-        -1296,
-        -560
-      ]
+      }
     },
     {
+      "id": "e697b1b4-c4da-4726-a59f-b25a28e882d5",
+      "name": "Buscar Itens em Andamento",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        -1072,
+        -560
+      ],
       "parameters": {
         "resource": "item",
         "site": {
@@ -45,14 +60,6 @@
         "simplify": false,
         "requestOptions": {}
       },
-      "id": "e697b1b4-c4da-4726-a59f-b25a28e882d5",
-      "name": "Buscar Itens em Andamento",
-      "type": "n8n-nodes-base.microsoftSharePoint",
-      "typeVersion": 1,
-      "position": [
-        -1072,
-        -560
-      ],
       "credentials": {
         "microsoftSharePointOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
@@ -60,9 +67,6 @@
       }
     },
     {
-      "parameters": {
-        "jsCode": "// Detecta alterações manuais no Lists e reinjeta no mesmo fluxo do WhatsApp.\nconst BASE = 'http://127.0.0.1:5678/webhook/';\nconst OP_ATIVO = ['Aguardando Operacional e Sistemas', 'Aguardando Operacional'];\nconst SIS_ATIVO = ['Aguardando Operacional e Sistemas', 'Aguardando Sistemas'];\n\nconst voto = (path, pollKey, opcao) => ({\n  url: BASE + path,\n  body: { event: 'poll.vote', origem: 'lists',\n    payload: { poll: { id: 'lists_' + pollKey }, vote: { selectedOptions: [opcao] } } }\n});\nconst justificativa = (path, id, texto) => ({\n  url: BASE + path,\n  body: { origem: 'lists', itemId: id, justificativa: texto }\n});\n\nconst saida = [];\nfor (const item of $input.all()) {\n  const f = item.json.fields || {};\n  const id = String(item.json.id);\n  const p = f.Processamento;\n  let acao = null;\n\n  // 1) Comercial (Recuperado / Não Recuperado)\n  if (p === 'Aguardando Comercial' && f.StatusComercial === 'Aguardando' && f.PollKeyComercial) {\n    const op = { 'Recuperado': '✅ Cliente Recuperado', 'Não Recuperado': '❌ Cliente Não Recuperado' }[f.ClienteRecuperado];\n    if (op) acao = { tipo: 'Comercial', ...voto('Resposta-Enquete-Comercial', f.PollKeyComercial, op) };\n  }\n  // 2) Justificativa Comercial digitada no Lists\n  const obsC = String(f.Observa_x00e7__x00e3_oComercial || '').trim();\n  if (!acao && p === 'Aguardando Comercial' && f.StatusComercial === 'Aguardando Observação' && obsC) {\n    acao = { tipo: 'Justificativa Comercial', ...justificativa('Observacao-Comercial', id, obsC) };\n  }\n  // 3) Placa\n  if (!acao && OP_ATIVO.includes(p) && f.StatusOperacional === 'Aguardando' && f.PollKeyOperacional) {\n    const op = { 'Retirada': '✅ Placa Retirada', 'Não Retirada': '⚠️ Placa Não Retirada' }[f.PlacaRemovida];\n    if (op) acao = { tipo: 'Placa', ...voto('Resposta-Operacional', f.PollKeyOperacional, op) };\n  }\n  // 4) Justificativa Operacional digitada no Lists\n  const obsO = String(f.Observa_x00e7__x00e3_oOperaciona || '').trim();\n  if (!acao && OP_ATIVO.includes(p) && f.StatusOperacional === 'Aguardando Observação' && obsO) {\n    acao = { tipo: 'Justificativa Operacional', ...justificativa('Observacao-Operacional', id, obsO) };\n  }\n  // 5) Sistemas\n  if (!acao && SIS_ATIVO.includes(p) && f.RetiradodoFindMe_x003f_ === 'Retirado' && f.PollKeySistemas) {\n    acao = { tipo: 'Sistemas', ...voto('Resposta-Operacional', f.PollKeySistemas, '✅ Retirado dos Sistemas') };\n  }\n\n  if (acao) saida.push({ json: { itemId: id, ...acao } });\n}\nreturn saida;\n"
-      },
       "id": "618ef00b-eb8a-4831-bc2c-6ecd6de82540",
       "name": "Detectar Alterações Manuais",
       "type": "n8n-nodes-base.code",
@@ -70,9 +74,23 @@
       "position": [
         -848,
         -560
-      ]
+      ],
+      "parameters": {
+        "jsCode": "// Detecta alterações manuais no Lists e reinjeta no mesmo fluxo do WhatsApp.\nconst BASE = 'http://127.0.0.1:5678/webhook/';\nconst OP_ATIVO = ['Aguardando Operacional e Sistemas', 'Aguardando Operacional'];\nconst SIS_ATIVO = ['Aguardando Operacional e Sistemas', 'Aguardando Sistemas'];\n\nconst voto = (path, pollKey, opcao) => ({\n  url: BASE + path,\n  body: { event: 'poll.vote', origem: 'lists',\n    payload: { poll: { id: 'lists_' + pollKey }, vote: { selectedOptions: [opcao] } } }\n});\nconst justificativa = (path, id, texto) => ({\n  url: BASE + path,\n  body: { origem: 'lists', itemId: id, justificativa: texto }\n});\n\nconst saida = [];\nfor (const item of $input.all()) {\n  const f = item.json.fields || {};\n  const id = String(item.json.id);\n  const p = f.Processamento;\n  let acao = null;\n\n  // 1) Comercial (Recuperado / Não Recuperado)\n  if (p === 'Aguardando Comercial' && f.StatusComercial === 'Aguardando' && f.PollKeyComercial) {\n    const op = { 'Recuperado': '✅ Cliente Recuperado', 'Não Recuperado': '❌ Cliente Não Recuperado' }[f.ClienteRecuperado];\n    if (op) acao = { tipo: 'Comercial', ...voto('Resposta-Enquete-Comercial', f.PollKeyComercial, op) };\n  }\n  // 2) Justificativa Comercial digitada no Lists\n  const obsC = String(f.Observa_x00e7__x00e3_oComercial || '').trim();\n  if (!acao && p === 'Aguardando Comercial' && f.StatusComercial === 'Aguardando Observação' && obsC) {\n    acao = { tipo: 'Justificativa Comercial', ...justificativa('Observacao-Comercial', id, obsC) };\n  }\n  // 3) Placa\n  if (!acao && OP_ATIVO.includes(p) && f.StatusOperacional === 'Aguardando' && f.PollKeyOperacional) {\n    const op = { 'Retirada': '✅ Placa Retirada', 'Não Retirada': '⚠️ Placa Não Retirada' }[f.PlacaRemovida];\n    if (op) acao = { tipo: 'Placa', ...voto('Resposta-Operacional', f.PollKeyOperacional, op) };\n  }\n  // 4) Justificativa Operacional digitada no Lists\n  const obsO = String(f.Observa_x00e7__x00e3_oOperaciona || '').trim();\n  if (!acao && OP_ATIVO.includes(p) && f.StatusOperacional === 'Aguardando Observação' && obsO) {\n    acao = { tipo: 'Justificativa Operacional', ...justificativa('Observacao-Operacional', id, obsO) };\n  }\n  // 5) Sistemas\n  if (!acao && SIS_ATIVO.includes(p) && f.RetiradodoFindMe_x003f_ === 'Retirado' && f.PollKeySistemas) {\n    acao = { tipo: 'Sistemas', ...voto('Resposta-Operacional', f.PollKeySistemas, '✅ Retirado dos Sistemas') };\n  }\n\n  if (acao) saida.push({ json: { itemId: id, ...acao } });\n}\nreturn saida;\n"
+      }
     },
     {
+      "id": "afba34f3-0b84-48a2-9178-36f3660776df",
+      "name": "Reinjetar Resposta no Fluxo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        -624,
+        -560
+      ],
       "parameters": {
         "method": "POST",
         "url": "={{ $json.url }}",
@@ -96,18 +114,7 @@
             }
           }
         }
-      },
-      "id": "afba34f3-0b84-48a2-9178-36f3660776df",
-      "name": "Reinjetar Resposta no Fluxo",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        -624,
-        -560
-      ],
-      "retryOnFail": true,
-      "maxTries": 3,
-      "waitBetweenTries": 3000
+      }
     }
   ],
   "connections": {
@@ -145,12 +152,12 @@
       ]
     }
   },
-  "active": false,
-  "settings": {
-    "executionOrder": "v1",
-    "binaryMode": "separate",
-    "saveDataSuccessExecution": "none"
-  },
   "nodeGroups": [],
+  "settings": {
+    "saveDataSuccessExecution": "none",
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "meta": null,
   "tags": []
 }

@@ -42,13 +42,13 @@ flowchart TD
 
 | # | Fluxo | Gatilho | O que faz |
 |---|-------|---------|-----------|
-| 0 | Receber Solicitação de Encerramento por E-mail | Outlook (novo e-mail) | Filtra e-mails com "Encerramento" no assunto, extrai do corpo nome, endereço, telefone, e-mail, motivo e data do encerramento e cria o item no Lists. Se faltar algum campo, o item não é criado. |
-| 1 | Encerramento de Clientes | A cada 30 s | Pega itens `Pendente`, abre o prazo comercial de 15 dias e envia ao grupo do Comercial uma enquete: *o cliente foi recuperado?* |
-| 2 | Lembrete de Prazo para Recuperação de Cliente | Segunda, 8h | Envia ao Comercial um resumo com os clientes ainda dentro do prazo e quantos dias faltam. |
-| 3 | Webhook de Mensagem do Comercial | Webhook (voto na enquete) | Recuperado → encerra o processo. Não recuperado → pede a justificativa no chat. |
+| 0 | Receber Solicitação de Encerramento por E-mail | Outlook (novo e-mail) | Filtra e-mails com "Encerramento" no assunto, extrai do corpo bolsão, nome, endereço, telefone, e-mail, motivo e data do encerramento e cria o item no Lists. Se faltar ou estiver errado algum campo, o item não é criado e o remetente recebe um e-mail dizendo o que corrigir. |
+| 1 | Encerramento de Clientes | A cada 30 s | Pega itens `Pendente`, abre o prazo comercial de 15 dias e envia ao **responsável comercial do bolsão** (lista Matriz Bolsões) os dados do cliente e uma enquete: *o cliente foi recuperado?* |
+| 2 | Lembrete de Prazo para Recuperação de Cliente | Segunda, 8h | Envia a cada responsável comercial um resumo dos clientes dos bolsões dele ainda dentro do prazo e quantos dias faltam. |
+| 3 | Webhook de Mensagem do Comercial | Webhook (voto na enquete) | Recuperado → encerra o processo e avisa o Financeiro por e-mail (HTML). Não recuperado → pede a justificativa ao responsável do bolsão. |
 | 4 | Receber Justificativa Comercial | Webhook (mensagem) | Grava a justificativa e decide: se o aviso prévio já venceu, segue para o Operacional; se não, aguarda. |
 | 5 | Controle de Prazos | Diário, 8h | Marca como `Prazo Expirado` quem passou dos 15 dias sem resposta e libera para o Operacional os clientes cujo aviso prévio venceu. |
-| 6 | Enviar Encerramento ao Operacional | Sub-fluxo | Envia duas enquetes em paralelo: retirada da placa (coordenador operacional) e retirada dos sistemas (time de Sistemas). |
+| 6 | Enviar Encerramento ao Operacional | Sub-fluxo | Envia, em paralelo, os dados do cliente e duas enquetes: retirada da placa (coordenador operacional) e retirada dos sistemas (time de Sistemas). |
 | 7 | Webhook de Resposta do Operacional | Webhook (voto na enquete) | Registra placa retirada/não retirada e sistemas retirados. Quando as duas frentes terminam, marca `Concluído`. |
 | 8 | Receber Justificativa Operacional | Webhook (mensagem) | Grava o motivo da placa não ter sido retirada e conclui o encerramento se os sistemas já estiverem resolvidos. |
 | 9 | Lembrete Operacional e Sistemas | Segunda, 8h | Cobra semanalmente as pendências de placa e de sistemas. |
@@ -80,6 +80,9 @@ O cliente foi recuperado?
 - **Prazos que andam sozinhos:** o Comercial tem 15 dias. Se não responder, o fluxo 5 encerra a tentativa e o processo segue sem depender de ninguém lembrar.
 - **Operacional e Sistemas em paralelo:** as duas frentes recebem a enquete ao mesmo tempo e o encerramento só é concluído quando ambas estão resolvidas, não importa a ordem.
 - **Lembretes semanais:** pendências do Comercial, do Operacional e de Sistemas são cobradas toda segunda-feira até serem resolvidas.
+- **Cada bolsão tem o seu responsável:** a lista **Matriz Bolsões** diz quem é o responsável comercial de cada bolsão. O fluxo procura o bolsão do encerramento na Matriz, ignorando acentos, maiúsculas e "Rua"/"Av.", e manda a enquete só para essa pessoa. Se o bolsão não for encontrado, a mensagem vai para o responsável pela automação, com um aviso.
+- **Modo teste:** os nós que escolhem destinatários têm uma chave `MODO_TESTE`. Ligada, todas as mensagens e e-mails vão para um número ou e-mail de teste, e cada mensagem diz para quem iria em produção.
+- **Falhas de rede não param o processo:** os nós que acessam SharePoint, WhatsApp, Outlook e Redis tentam de novo até 5 vezes, com 5 s entre as tentativas. Os contadores do Redis que servem de trava contra clique duplo ficam de fora de propósito: repetir um `INCR` faria a trava contar duas vezes. Se a falha persistir, um fluxo de erro avisa no WhatsApp com o link da execução.
 
 ## Como usar
 
@@ -89,7 +92,8 @@ O cliente foi recuperado?
 - [WAHA](https://waha.devlike.pro) (WhatsApp HTTP API) com uma sessão conectada e webhooks apontando para o n8n
 - Redis
 - Conta Microsoft 365 com Outlook e um site do SharePoint
-- Uma lista no Microsoft Lists com as colunas usadas pelos fluxos: `Title` (endereço), `NomedoCliente`, `ContatodoCliente`, `E-MaildoCliente`, `Motivo`, `AvisoPrevio`, `Processamento`, `StatusComercial`, `ClienteRecuperado`, `DataInicioComercial`, `DataLimiteComercial`, `DataRespostaComercial`, `ObservaçãoComercial`, `StatusOperacional`, `PlacaRemovida`, `ObservaçãoOperacional`, `RetiradodoFindMe?`, `PollKeyComercial`, `PollKeyOperacional` e `PollKeySistemas`
+- Uma lista **Matriz Bolsões** com `Title` (nome do bolsão) e `Responsável` (coluna de pessoa)
+- Uma lista no Microsoft Lists com as colunas usadas pelos fluxos: `Title` (endereço), `Bolsão`, `NomedoCliente`, `ContatodoCliente`, `E-MaildoCliente`, `Motivo`, `AvisoPrevio`, `Processamento`, `StatusComercial`, `ClienteRecuperado`, `DataInicioComercial`, `DataLimiteComercial`, `DataRespostaComercial`, `ObservaçãoComercial`, `StatusOperacional`, `PlacaRemovida`, `ObservaçãoOperacional`, `RetiradodoFindMe?`, `PollKeyComercial`, `PollKeyOperacional` e `PollKeySistemas`
 
 ### Passos
 
@@ -104,7 +108,11 @@ O cliente foi recuperado?
 7. Nos fluxos **4** e **5**, reaponte os nós **Call 'Enviar Encerramento ao Operacional'** para o fluxo 6 importado.
 8. No fluxo **10**, ajuste `BASE` para a URL de webhooks do seu n8n.
 9. No WAHA, configure os webhooks de voto em enquete (`poll.vote`) e de mensagem para os paths `Resposta-Enquete-Comercial`, `Observacao-Comercial`, `Resposta-Operacional` e `Observacao-Operacional`.
-10. Ative os fluxos.
+10. Nos nós **Buscar Matriz Bolsões** (fluxos 1 a 4), troque `SEU-TENANT`, `SEU-SITE` e o GUID da lista pelos da sua Matriz Bolsões.
+11. Nos nós de código **Destinatários** (fluxos 1 a 4), preencha `REPRESENTANTES` com o e-mail e o WhatsApp de cada responsável comercial e `SEMPRE` com quem recebe as cópias e os avisos. Em produção, deixe `MODO_TESTE = false`.
+12. No nó **E-mail - Cliente Recuperado** (fluxo 3), defina o e-mail do Financeiro em `EMAIL_FINANCEIRO`.
+13. Opcional: crie um fluxo com **Error Trigger** e selecione-o em *Settings → Error workflow* de cada fluxo, para ser avisado das falhas.
+14. Ative os fluxos.
 
 ## Segurança
 

@@ -1,12 +1,11 @@
 {
   "name": "7 - Webhook de Resposta do Operacional",
+  "description": null,
+  "active": false,
+  "versionCounter": 228,
+  "sourceWorkflowId": null,
   "nodes": [
     {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "Resposta-Operacional",
-        "options": {}
-      },
       "id": "b9baf8e5-361c-4e08-8b35-40120a83e893",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
@@ -14,9 +13,22 @@
       "position": [
         0,
         -352
-      ]
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "Resposta-Operacional",
+        "options": {}
+      }
     },
     {
+      "id": "62aa67dd-8f14-4402-8126-2b968b4369b1",
+      "name": "Preparar Resposta Operacional",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        -352
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -35,17 +47,17 @@
           ]
         },
         "options": {}
-      },
-      "id": "62aa67dd-8f14-4402-8126-2b968b4369b1",
-      "name": "Preparar Resposta Operacional",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.5,
-      "position": [
-        224,
-        -352
-      ]
+      }
     },
     {
+      "id": "0570ff66-30b0-4b5a-adc4-55897b4a6a3b",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        -368
+      ],
       "parameters": {
         "rules": {
           "values": [
@@ -126,48 +138,46 @@
           ]
         },
         "options": {}
-      },
-      "id": "0570ff66-30b0-4b5a-adc4-55897b4a6a3b",
-      "name": "Switch",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.4,
-      "position": [
-        448,
-        -368
-      ]
+      }
     },
     {
+      "id": "a0af1c9a-4bd8-432d-97b8-95704da5483f",
+      "name": "Justificativa Operacional",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        1568,
+        -448
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://127.0.0.1:3000/api/sendText",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"session\": \"automacao_encerramento_and_adesao\",\n  \"chatId\": \"<<PREENCHER>>\",\n  \"text\": \"📝 JUSTIFICATIVA OPERACIONAL\\n\\n👤 Nome: {{ $('Buscar Dados para Justificativa Operacional').item.json.fields.NomedoCliente }}\\n📍 Endereço: {{ $('Buscar Dados para Justificativa Operacional').item.json.fields.Title }}\\n📝 Motivo: {{ $('Buscar Dados para Justificativa Operacional').item.json.fields.Motivo }}\\n📧 E-mail: {{ $('Buscar Dados para Justificativa Operacional').item.json.fields.E_x002d_MaildoCliente }}\\n📞 Telefone: {{ $('Buscar Dados para Justificativa Operacional').item.json.fields.ContatodoCliente }}\\n📅 Aviso Prévio: {{ DateTime.fromISO($('Buscar Dados para Justificativa Operacional').item.json.fields.AvisoPrevio).setZone('America/Sao_Paulo').toFormat('dd/MM/yyyy') }}\\n\\nA placa não foi retirada.\\n\\nPor favor, informe o motivo pelo qual a placa não foi retirada.\\n\\n✍️ Envie a justificativa nesta conversa\"\n}",
+        "jsonBody": "={{ (() => { const f = $('Buscar Dados para Justificativa Operacional').item.json.fields || {}; const t = '📝 *JUSTIFICATIVA – OPERACIONAL*\\n\\n' + ['🏘️ *Bolsão:* ' + (f.Bols_x00e3_o || 'Não informado'), '', '👤 *Cliente:* ' + (f.NomedoCliente || 'Não informado'), '📍 *Endereço:* ' + (f.Title || 'Não informado'), '📞 *Telefone:* ' + (f.ContatodoCliente || 'Não informado'), '📧 *E-mail:* ' + (f.E_x002d_MaildoCliente || 'Não informado'), '📝 *Motivo:* ' + (f.Motivo || 'Não informado'), '📅 *Data do encerramento:* ' + (f.AvisoPrevio ? DateTime.fromISO(f.AvisoPrevio).setZone('America/Sao_Paulo').toFormat('dd/MM/yyyy') : 'Não informada')].join('\\n') + '\\n\\n📌 *Ação necessária:*\\nA placa *não foi retirada*. Informe o motivo pelo qual não foi possível retirá-la.\\n\\n✍️ Envie a justificativa nesta conversa.'; return JSON.stringify({ session: 'automacao_encerramento_and_adesao', chatId: '<<PREENCHER>>', text: t }); })() }}",
         "options": {}
-      },
-      "id": "a0af1c9a-4bd8-432d-97b8-95704da5483f",
-      "name": "Justificativa Operacional",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        1568,
-        -448
-      ]
+      }
     },
     {
+      "id": "fa47e5cd-0c92-4e2d-942a-fd3c46856c0f",
+      "name": "Redis1",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        1792,
+        -448
+      ],
       "parameters": {
         "operation": "set",
         "key": "={{ 'encerramento:justificativa-operacional:' + String($('Justificativa Operacional').item.json.id ?? $('Justificativa Operacional').item.json._data?.Info?.ID ?? '').split('_').pop() }}",
         "value": "={{ $('Redis3').item.json.itemIdSharePoint }}"
       },
-      "id": "fa47e5cd-0c92-4e2d-942a-fd3c46856c0f",
-      "name": "Redis1",
-      "type": "n8n-nodes-base.redis",
-      "typeVersion": 1,
-      "position": [
-        1792,
-        -448
-      ],
       "credentials": {
         "redis": {
           "name": "<<CRIAR CREDENCIAL redis>>"
@@ -175,6 +185,17 @@
       }
     },
     {
+      "id": "8a854598-1ae2-400c-bca6-bce7d8e8288b",
+      "name": "Update item in a list1",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        1120,
+        -448
+      ],
       "parameters": {
         "resource": "item",
         "operation": "update",
@@ -520,14 +541,6 @@
         },
         "requestOptions": {}
       },
-      "id": "8a854598-1ae2-400c-bca6-bce7d8e8288b",
-      "name": "Update item in a list1",
-      "type": "n8n-nodes-base.microsoftSharePoint",
-      "typeVersion": 1,
-      "position": [
-        1120,
-        -448
-      ],
       "credentials": {
         "microsoftSharePointOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
@@ -535,20 +548,23 @@
       }
     },
     {
+      "id": "afa36bec-59ad-4add-b255-69535571cb05",
+      "name": "Redis3",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        672,
+        -352
+      ],
       "parameters": {
         "operation": "get",
         "propertyName": "itemIdSharePoint",
         "key": "={{ 'encerramento:operacional:' + $('Preparar Resposta Operacional').item.json.EventoKey }}",
         "options": {}
       },
-      "id": "afa36bec-59ad-4add-b255-69535571cb05",
-      "name": "Redis3",
-      "type": "n8n-nodes-base.redis",
-      "typeVersion": 1,
-      "position": [
-        672,
-        -352
-      ],
       "credentials": {
         "redis": {
           "name": "<<CRIAR CREDENCIAL redis>>"
@@ -556,20 +572,23 @@
       }
     },
     {
+      "id": "ab1dee96-e4b0-40b4-ac87-63e0e0782e10",
+      "name": "Redis4",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        672,
+        -64
+      ],
       "parameters": {
         "operation": "get",
         "propertyName": "itemIdSharePoint",
         "key": "={{ 'encerramento:sistemas:' + $('Preparar Resposta Operacional').item.json.EventoKey }}",
         "options": {}
       },
-      "id": "ab1dee96-e4b0-40b4-ac87-63e0e0782e10",
-      "name": "Redis4",
-      "type": "n8n-nodes-base.redis",
-      "typeVersion": 1,
-      "position": [
-        672,
-        -64
-      ],
       "credentials": {
         "redis": {
           "name": "<<CRIAR CREDENCIAL redis>>"
@@ -577,20 +596,23 @@
       }
     },
     {
+      "id": "e298083f-8258-47fc-8a43-13d01a96d1b5",
+      "name": "Redis Placa Retirada",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        672,
+        -640
+      ],
       "parameters": {
         "operation": "get",
         "propertyName": "itemIdSharePoint",
         "key": "={{ 'encerramento:operacional:' + $('Preparar Resposta Operacional').item.json.EventoKey }}",
         "options": {}
       },
-      "id": "e298083f-8258-47fc-8a43-13d01a96d1b5",
-      "name": "Redis Placa Retirada",
-      "type": "n8n-nodes-base.redis",
-      "typeVersion": 1,
-      "position": [
-        672,
-        -640
-      ],
       "credentials": {
         "redis": {
           "name": "<<CRIAR CREDENCIAL redis>>"
@@ -598,18 +620,21 @@
       }
     },
     {
-      "parameters": {
-        "operation": "delete",
-        "key": "={{ 'encerramento:operacional:' + $('Preparar Resposta Operacional').item.json.EventoKey }}"
-      },
       "id": "dedab385-9847-4698-b14d-cad6fc786e10",
       "name": "Redis",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
       "position": [
         2016,
         -768
       ],
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'encerramento:operacional:' + $('Preparar Resposta Operacional').item.json.EventoKey }}"
+      },
       "credentials": {
         "redis": {
           "name": "<<CRIAR CREDENCIAL redis>>"
@@ -617,6 +642,17 @@
       }
     },
     {
+      "id": "498bc786-b760-4315-a339-59b841fb9aca",
+      "name": "Buscar Status Após Placa",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        1344,
+        -768
+      ],
       "parameters": {
         "resource": "item",
         "operation": "get",
@@ -640,14 +676,6 @@
         "simplify": false,
         "requestOptions": {}
       },
-      "id": "498bc786-b760-4315-a339-59b841fb9aca",
-      "name": "Buscar Status Após Placa",
-      "type": "n8n-nodes-base.microsoftSharePoint",
-      "typeVersion": 1,
-      "position": [
-        1344,
-        -768
-      ],
       "credentials": {
         "microsoftSharePointOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
@@ -655,6 +683,17 @@
       }
     },
     {
+      "id": "255687a7-61c9-4375-8a7f-8cbe42ffcdd3",
+      "name": "Retirar Placa",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        1120,
+        -768
+      ],
       "parameters": {
         "resource": "item",
         "operation": "update",
@@ -1000,14 +1039,6 @@
         },
         "requestOptions": {}
       },
-      "id": "255687a7-61c9-4375-8a7f-8cbe42ffcdd3",
-      "name": "Retirar Placa",
-      "type": "n8n-nodes-base.microsoftSharePoint",
-      "typeVersion": 1,
-      "position": [
-        1120,
-        -768
-      ],
       "credentials": {
         "microsoftSharePointOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
@@ -1015,6 +1046,17 @@
       }
     },
     {
+      "id": "e679b223-3661-4105-98d8-72c0124d7367",
+      "name": "Update item in a list",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        1792,
+        -864
+      ],
       "parameters": {
         "resource": "item",
         "operation": "update",
@@ -1330,14 +1372,6 @@
         },
         "requestOptions": {}
       },
-      "id": "e679b223-3661-4105-98d8-72c0124d7367",
-      "name": "Update item in a list",
-      "type": "n8n-nodes-base.microsoftSharePoint",
-      "typeVersion": 1,
-      "position": [
-        1792,
-        -864
-      ],
       "credentials": {
         "microsoftSharePointOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
@@ -1345,6 +1379,17 @@
       }
     },
     {
+      "id": "9d7dc4bb-c379-47f8-990d-dc9d4f4f8ce2",
+      "name": "Buscar Status Após Sistemas",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        1344,
+        -144
+      ],
       "parameters": {
         "resource": "item",
         "operation": "get",
@@ -1368,14 +1413,6 @@
         "simplify": false,
         "requestOptions": {}
       },
-      "id": "9d7dc4bb-c379-47f8-990d-dc9d4f4f8ce2",
-      "name": "Buscar Status Após Sistemas",
-      "type": "n8n-nodes-base.microsoftSharePoint",
-      "typeVersion": 1,
-      "position": [
-        1344,
-        -144
-      ],
       "credentials": {
         "microsoftSharePointOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
@@ -1383,6 +1420,14 @@
       }
     },
     {
+      "id": "30e529b2-8e0c-43c0-8524-d71d15b63473",
+      "name": "Retirado dos Sistemas?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1568,
+        -768
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -1406,17 +1451,17 @@
           "combinator": "and"
         },
         "options": {}
-      },
-      "id": "30e529b2-8e0c-43c0-8524-d71d15b63473",
-      "name": "Retirado dos Sistemas?",
+      }
+    },
+    {
+      "id": "3a89eb3f-217d-4c98-9a82-8cf821187f90",
+      "name": "Placa concluída?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
         1568,
-        -768
-      ]
-    },
-    {
+        -144
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -1450,17 +1495,20 @@
           "combinator": "or"
         },
         "options": {}
-      },
-      "id": "3a89eb3f-217d-4c98-9a82-8cf821187f90",
-      "name": "Placa concluída?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        1568,
-        -144
-      ]
+      }
     },
     {
+      "id": "7deb0d96-67ad-4b70-ac40-7a8816da2615",
+      "name": "Update item in a list2",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        1792,
+        -240
+      ],
       "parameters": {
         "resource": "item",
         "operation": "update",
@@ -1776,14 +1824,6 @@
         },
         "requestOptions": {}
       },
-      "id": "7deb0d96-67ad-4b70-ac40-7a8816da2615",
-      "name": "Update item in a list2",
-      "type": "n8n-nodes-base.microsoftSharePoint",
-      "typeVersion": 1,
-      "position": [
-        1792,
-        -240
-      ],
       "credentials": {
         "microsoftSharePointOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
@@ -1791,18 +1831,21 @@
       }
     },
     {
-      "parameters": {
-        "operation": "delete",
-        "key": "={{ 'encerramento:sistemas:' + $('Preparar Resposta Operacional').item.json.EventoKey }}"
-      },
       "id": "21aa6451-e68b-43b6-af42-eb63865fd8ae",
       "name": "Redis2",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
       "position": [
         2016,
         -144
       ],
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'encerramento:sistemas:' + $('Preparar Resposta Operacional').item.json.EventoKey }}"
+      },
       "credentials": {
         "redis": {
           "name": "<<CRIAR CREDENCIAL redis>>"
@@ -1810,6 +1853,17 @@
       }
     },
     {
+      "id": "51f33e7c-ac09-45d1-9243-263128ce2825",
+      "name": "Marcar Sistemas como Retirado",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        1120,
+        -144
+      ],
       "parameters": {
         "resource": "item",
         "operation": "update",
@@ -2154,14 +2208,6 @@
         },
         "requestOptions": {}
       },
-      "id": "51f33e7c-ac09-45d1-9243-263128ce2825",
-      "name": "Marcar Sistemas como Retirado",
-      "type": "n8n-nodes-base.microsoftSharePoint",
-      "typeVersion": 1,
-      "position": [
-        1120,
-        -144
-      ],
       "credentials": {
         "microsoftSharePointOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
@@ -2169,18 +2215,21 @@
       }
     },
     {
-      "parameters": {
-        "operation": "delete",
-        "key": "={{ 'encerramento:operacional:' + $('Preparar Resposta Operacional').item.json.EventoKey }}"
-      },
       "id": "d1bef2f6-0169-4c8b-a816-1a76eb72fde4",
       "name": "Redis5",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
       "position": [
         2016,
         -448
       ],
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'encerramento:operacional:' + $('Preparar Resposta Operacional').item.json.EventoKey }}"
+      },
       "credentials": {
         "redis": {
           "name": "<<CRIAR CREDENCIAL redis>>"
@@ -2188,6 +2237,17 @@
       }
     },
     {
+      "id": "2756a488-43e1-4320-bb55-2399481e9b04",
+      "name": "Aguardar Sistemas",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        1792,
+        -672
+      ],
       "parameters": {
         "resource": "item",
         "operation": "update",
@@ -2503,14 +2563,6 @@
         },
         "requestOptions": {}
       },
-      "id": "2756a488-43e1-4320-bb55-2399481e9b04",
-      "name": "Aguardar Sistemas",
-      "type": "n8n-nodes-base.microsoftSharePoint",
-      "typeVersion": 1,
-      "position": [
-        1792,
-        -672
-      ],
       "credentials": {
         "microsoftSharePointOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
@@ -2518,6 +2570,17 @@
       }
     },
     {
+      "id": "6eb7ec15-6198-4ceb-b7a0-abd31e776ca5",
+      "name": "Aguardar Operacional",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        1792,
+        -48
+      ],
       "parameters": {
         "resource": "item",
         "operation": "update",
@@ -2833,14 +2896,6 @@
         },
         "requestOptions": {}
       },
-      "id": "6eb7ec15-6198-4ceb-b7a0-abd31e776ca5",
-      "name": "Aguardar Operacional",
-      "type": "n8n-nodes-base.microsoftSharePoint",
-      "typeVersion": 1,
-      "position": [
-        1792,
-        -48
-      ],
       "credentials": {
         "microsoftSharePointOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
@@ -2848,6 +2903,17 @@
       }
     },
     {
+      "id": "63f3a963-8385-48c4-8aae-0d954a4d75db",
+      "name": "Buscar Dados para Justificativa Operacional",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        1344,
+        -448
+      ],
       "parameters": {
         "resource": "item",
         "operation": "get",
@@ -2871,14 +2937,6 @@
         "simplify": false,
         "requestOptions": {}
       },
-      "id": "63f3a963-8385-48c4-8aae-0d954a4d75db",
-      "name": "Buscar Dados para Justificativa Operacional",
-      "type": "n8n-nodes-base.microsoftSharePoint",
-      "typeVersion": 1,
-      "position": [
-        1344,
-        -448
-      ],
       "credentials": {
         "microsoftSharePointOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
@@ -2886,6 +2944,14 @@
       }
     },
     {
+      "id": "acadd48c-1b94-4e04-afda-6b3be8acce31",
+      "name": "Enquete Placa Encontrada?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        896,
+        -640
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -2909,17 +2975,17 @@
           "combinator": "and"
         },
         "options": {}
-      },
-      "id": "acadd48c-1b94-4e04-afda-6b3be8acce31",
-      "name": "Enquete Placa Encontrada?",
+      }
+    },
+    {
+      "id": "c1bb47b8-3d8c-4f7b-a086-a4e271110f4c",
+      "name": "Enquete Placa Encontrada? (Não Retirada)",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
         896,
-        -640
-      ]
-    },
-    {
+        -352
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -2943,17 +3009,17 @@
           "combinator": "and"
         },
         "options": {}
-      },
-      "id": "c1bb47b8-3d8c-4f7b-a086-a4e271110f4c",
-      "name": "Enquete Placa Encontrada? (Não Retirada)",
+      }
+    },
+    {
+      "id": "ba1070d2-2e4b-4f9c-87ae-8aa7a7630dbe",
+      "name": "Enquete Sistemas Encontrada?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
         896,
-        -352
-      ]
-    },
-    {
+        -64
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -2977,15 +3043,7 @@
           "combinator": "and"
         },
         "options": {}
-      },
-      "id": "ba1070d2-2e4b-4f9c-87ae-8aa7a7630dbe",
-      "name": "Enquete Sistemas Encontrada?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        896,
-        -64
-      ]
+      }
     }
   ],
   "connections": {
@@ -3271,7 +3329,7 @@
       ]
     }
   },
-  "active": false,
+  "nodeGroups": [],
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
@@ -3280,6 +3338,5 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "nodeGroups": [],
   "tags": []
 }

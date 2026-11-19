@@ -1,7 +1,19 @@
 {
   "name": "0 - Receber Solicitação de Encerramento por E-mail",
+  "description": null,
+  "active": false,
+  "versionCounter": 49,
+  "sourceWorkflowId": null,
   "nodes": [
     {
+      "id": "3d2fba27-d123-4538-a197-1b22cde0267d",
+      "name": "Microsoft Outlook Trigger",
+      "type": "n8n-nodes-base.microsoftOutlookTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -64
+      ],
       "parameters": {
         "pollTimes": {
           "item": [
@@ -14,14 +26,6 @@
         "filters": {},
         "options": {}
       },
-      "type": "n8n-nodes-base.microsoftOutlookTrigger",
-      "typeVersion": 1,
-      "position": [
-        0,
-        -64
-      ],
-      "id": "3d2fba27-d123-4538-a197-1b22cde0267d",
-      "name": "Microsoft Outlook Trigger",
       "credentials": {
         "microsoftOutlookOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftOutlookOAuth2Api>>"
@@ -29,6 +33,17 @@
       }
     },
     {
+      "id": "cb431c82-d55e-456c-a258-5c49ecb96577",
+      "name": "Get a message",
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        464,
+        -192
+      ],
       "parameters": {
         "operation": "get",
         "messageId": {
@@ -39,14 +54,6 @@
         "output": "raw",
         "options": {}
       },
-      "type": "n8n-nodes-base.microsoftOutlook",
-      "typeVersion": 2,
-      "position": [
-        464,
-        -192
-      ],
-      "id": "cb431c82-d55e-456c-a258-5c49ecb96577",
-      "name": "Get a message",
       "credentials": {
         "microsoftOutlookOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftOutlookOAuth2Api>>"
@@ -54,52 +61,69 @@
       }
     },
     {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 3
-          },
-          "conditions": [
-            {
-              "id": "e4ee669d-f64c-4006-a056-d8e230a00fb0",
-              "leftValue": "={{ $json.subject }}",
-              "rightValue": "Encerramento",
-              "operator": {
-                "type": "string",
-                "operation": "contains"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
+      "id": "6aa324d0-d0de-4779-8004-e2fba0686688",
+      "name": "If",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
         224,
         -64
       ],
-      "id": "6aa324d0-d0de-4779-8004-e2fba0686688",
-      "name": "If"
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e4ee669d-f64c-4006-a056-d8e230a00fb0",
+              "leftValue": "={{ $json.subject }}",
+              "rightValue": "encerramento",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "0b7c1f6e-2d4a-4e8b-9c3f-5a1d2e3f4b5c",
+              "leftValue": "={{ $json.subject }}",
+              "rightValue": "^\\s*([Rr][Ee][Ss]?|[Rr][Vv]|[Aa][Ww])\\s*:",
+              "operator": {
+                "type": "string",
+                "operation": "notRegex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
     },
     {
-      "parameters": {
-        "jsCode": "const html = $json.body?.content || '';\n\n// Converte o HTML do Outlook em texto simples\nconst texto = html\n  .replace(/<br\\s*\\/?>/gi, '\\n')\n  .replace(/<\\/p>/gi, '\\n')\n  .replace(/<[^>]+>/g, '')\n  .replace(/&nbsp;/gi, ' ')\n  .replace(/&amp;/gi, '&')\n  .replace(/&lt;/gi, '<')\n  .replace(/&gt;/gi, '>')\n  .replace(/&quot;/gi, '\"')\n  .replace(/&#39;|&apos;/gi, \"'\")\n  .replace(/\\r/g, '')\n  .split('\\n')\n  .map(linha => linha.trim())\n  .filter(Boolean)\n  .join('\\n');\n\nfunction escapeRegex(texto) {\n  return texto.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');\n}\n\nfunction extrair(label) {\n  const regex = new RegExp(\n    `^${escapeRegex(label)}\\\\s*(.+)$`,\n    'im'\n  );\n\n  const resultado = texto.match(regex);\n\n  return resultado ? resultado[1].trim() : '';\n}\n\nconst dataEncerramento = extrair('Data do Encerramento:');\nconst nomeCliente = extrair('Nome do Cliente:');\nconst endereco = extrair('Endereço:');\nconst telefone = extrair('Telefone:');\nconst email = extrair('E-mail:');\nconst motivo = extrair('Motivo:');\n\n// Converte DD/MM/AAAA para AAAA-MM-DD\nlet avisoPrevio = '';\n\nif (/^\\d{2}\\/\\d{2}\\/\\d{4}$/.test(dataEncerramento)) {\n  const [dia, mes, ano] = dataEncerramento.split('/');\n  avisoPrevio = `${ano}-${mes}-${dia}`;\n}\n\nconst faltando = [];\n\nif (!dataEncerramento) faltando.push('Data do Encerramento');\nif (!nomeCliente) faltando.push('Nome do Cliente');\nif (!endereco) faltando.push('Endereço');\nif (!telefone) faltando.push('Telefone');\nif (!email) faltando.push('E-mail');\nif (!motivo) faltando.push('Motivo');\nif (!avisoPrevio) faltando.push('Data inválida');\n\nreturn {\n  json: {\n    emailId: $json.id,\n    assunto: $json.subject,\n    remetente: $json.from?.emailAddress?.address || '',\n    \n    dataEncerramento,\n    avisoPrevio,\n    nomeCliente,\n    endereco,\n    telefone,\n    email,\n    motivo,\n\n    valido: faltando.length === 0,\n    camposFaltantes: faltando\n  }\n};"
-      },
+      "id": "8b9f2716-af30-424d-9ac0-534910bfc96b",
+      "name": "Extrair Dados do Encerramento",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         688,
         -192
       ],
-      "id": "8b9f2716-af30-424d-9ac0-534910bfc96b",
-      "name": "Extrair Dados do Encerramento"
+      "parameters": {
+        "jsCode": "const html = $json.body?.content || '';\n\n// Converte o HTML do Outlook em texto simples\nconst texto = html\n  .replace(/<br\\s*\\/?>/gi, '\\n')\n  .replace(/<\\/p>/gi, '\\n')\n  .replace(/<[^>]+>/g, '')\n  .replace(/&nbsp;/gi, ' ')\n  .replace(/&amp;/gi, '&')\n  .replace(/&lt;/gi, '<')\n  .replace(/&gt;/gi, '>')\n  .replace(/&quot;/gi, '\"')\n  .replace(/&#39;|&apos;/gi, \"'\")\n  .replace(/\\r/g, '')\n  .split('\\n')\n  .map(linha => linha.trim())\n  .filter(Boolean)\n  .join('\\n');\n\nfunction escapeRegex(texto) {\n  return texto.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');\n}\n\nfunction extrair(label) {\n  const regex = new RegExp(\n    `^${escapeRegex(label)}\\\\s*(.+)$`,\n    'im'\n  );\n\n  const resultado = texto.match(regex);\n\n  return resultado ? resultado[1].trim() : '';\n}\n\nconst bolsao = extrair('Bolsão:') || extrair('Bolsao:');\nconst dataEncerramento = extrair('Data do Encerramento:');\nconst nomeCliente = extrair('Nome do Cliente:');\nconst endereco = extrair('Endereço:');\nconst telefone = extrair('Telefone:');\nconst email = extrair('E-mail:');\nconst motivo = extrair('Motivo:');\n\n// Converte DD/MM/AAAA para AAAA-MM-DD\nlet avisoPrevio = '';\n\nif (/^\\d{2}\\/\\d{2}\\/\\d{4}$/.test(dataEncerramento)) {\n  const [dia, mes, ano] = dataEncerramento.split('/');\n  avisoPrevio = `${ano}-${mes}-${dia}`;\n}\n\nconst faltando = [];\n\nif (!dataEncerramento) faltando.push('Data do Encerramento');\nif (!nomeCliente) faltando.push('Nome do Cliente');\nif (!endereco) faltando.push('Endereço');\nif (!telefone) faltando.push('Telefone');\nif (!email) faltando.push('E-mail');\nif (!motivo) faltando.push('Motivo');\nif (dataEncerramento && !avisoPrevio) faltando.push('Data do Encerramento em formato inválido (use DD/MM/AAAA)');\n\nreturn {\n  json: {\n    emailId: $json.id,\n    assunto: $json.subject,\n    remetente: $json.from?.emailAddress?.address || '',\n    \n    bolsao,\n    dataEncerramento,\n    avisoPrevio,\n    nomeCliente,\n    endereco,\n    telefone,\n    email,\n    motivo,\n\n    valido: faltando.length === 0,\n    camposFaltantes: faltando\n  }\n};"
+      }
     },
     {
+      "id": "b440df13-7a52-4f46-bb67-4baea7ea3cf9",
+      "name": "Dados Válidos?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        912,
+        -192
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -123,17 +147,20 @@
           "combinator": "and"
         },
         "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        912,
-        -192
-      ],
-      "id": "b440df13-7a52-4f46-bb67-4baea7ea3cf9",
-      "name": "Dados Válidos?"
+      }
     },
     {
+      "id": "3cb02a42-9e5b-4941-b1ff-93e09395b232",
+      "name": "Create item",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 2,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        1136,
+        -288
+      ],
       "parameters": {
         "resource": "item",
         "operation": "create",
@@ -159,7 +186,8 @@
             "E_x002d_MaildoCliente": "={{ $json.email }}",
             "Motivo": "={{ $json.motivo }}",
             "AvisoPrevio": "={{ $json.avisoPrevio }}",
-            "Processamento": "Pendente"
+            "Processamento": "Pendente",
+            "Bols_x00e3_o": "={{ $json.bolsao }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -370,23 +398,53 @@
                 }
               ],
               "removed": false
+            },
+            {
+              "id": "Bols_x00e3_o",
+              "canBeUsedToMatch": false,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "Bolsão",
+              "readOnly": false,
+              "required": false,
+              "type": "string"
             }
           ],
           "attemptToConvertTypes": false,
           "convertFieldsToString": false
         }
       },
-      "type": "n8n-nodes-base.microsoftSharePoint",
-      "typeVersion": 2,
-      "position": [
-        1136,
-        -288
-      ],
-      "id": "3cb02a42-9e5b-4941-b1ff-93e09395b232",
-      "name": "Create item",
       "credentials": {
         "microsoftOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftOAuth2Api>>"
+        }
+      }
+    },
+    {
+      "id": "c4d1e2f3-a4b5-4c6d-8e7f-9a0b1c2d3e4f",
+      "name": "Avisar Remetente - Dados Inválidos",
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput",
+      "position": [
+        1136,
+        -96
+      ],
+      "parameters": {
+        "operation": "send",
+        "toRecipients": "={{ $json.remetente }}",
+        "subject": "=⚠️ Solicitação NÃO cadastrada - corrigir e reenviar",
+        "bodyContent": "=Olá,<br><br>Sua solicitação recebida com o assunto <b>\"{{ $json.assunto }}\"</b> <b>NÃO foi cadastrada</b>, pois os itens abaixo estão faltando ou incorretos:<br><br>{{ $json.camposFaltantes.map(c => '• ' + c).join('<br>') }}<br><br>Por favor, envie um <b>novo e-mail</b> (não responda este) com <b>\"Encerramento\"</b> no assunto e o corpo exatamente neste formato, um campo por linha:<br><br>Bolsão: ...<br>Data do Encerramento: DD/MM/AAAA<br>Nome do Cliente: ...<br>Endereço: ...<br>Telefone: ...<br>E-mail: ...<br>Motivo: ...<br><br><i>Mensagem automática.</i>",
+        "additionalFields": {
+          "bodyContentType": "html"
+        }
+      },
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "name": "<<CRIAR CREDENCIAL microsoftOutlookOAuth2Api>>"
         }
       }
     }
@@ -444,11 +502,18 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Avisar Remetente - Dados Inválidos",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     }
   },
-  "active": false,
+  "nodeGroups": [],
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate"
@@ -456,6 +521,5 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "nodeGroups": [],
   "tags": []
 }

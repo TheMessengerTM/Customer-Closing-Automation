@@ -1,12 +1,11 @@
 {
   "name": "4 - Receber Justificativa Comercial",
+  "description": null,
+  "active": false,
+  "versionCounter": 90,
+  "sourceWorkflowId": null,
   "nodes": [
     {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "Observacao-Comercial",
-        "options": {}
-      },
       "id": "46764e97-1ce6-4e74-82fa-e3cc3df5d1b2",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
@@ -14,9 +13,22 @@
       "position": [
         -896,
         -752
-      ]
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "Observacao-Comercial",
+        "options": {}
+      }
     },
     {
+      "id": "8eaeae55-55ff-4869-810e-c15807234bf8",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -672,
+        -752
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -29,7 +41,7 @@
             {
               "id": "0720d43f-68ce-460a-8eca-6c9fb008e551",
               "name": "telefone",
-              "value": "={{ String($json.body?.payload?._data?.Info?.SenderAlt || $json.body?.payload?.from || '').split('@')[0] }}",
+              "value": "={{ String($json.body?.payload?._data?.Info?.SenderAlt || $json.body?.payload?.from || '').split('@')[0].split(':')[0] }}",
               "type": "string"
             },
             {
@@ -41,23 +53,23 @@
             {
               "id": "6e688784-d3e6-4f7a-8564-eaf905d4038a",
               "name": "valida",
-              "value": "={{ ($json.headers?.['x-aster-sync'] === '<<PREENCHER>>' && !!$json.body?.itemId) || (String($json.body?.payload?._data?.Info?.SenderAlt || $json.body?.payload?.from || '').split('@')[0] === '5511999999999' && $json.body?.payload?.fromMe !== true && String($json.body?.payload?.body ?? '').trim() !== '') }}",
+              "value": "={{ ($json.headers?.['x-aster-sync'] === '<<PREENCHER>>' && !!$json.body?.itemId) || (['5511999999999', '5511999999999', '5511999999999'].includes(String($json.body?.payload?._data?.Info?.SenderAlt || $json.body?.payload?.from || '').split('@')[0].split(':')[0]) && $json.body?.payload?.fromMe !== true && String($json.body?.payload?.body ?? '').trim() !== '') }}",
               "type": "boolean"
             }
           ]
         },
         "options": {}
-      },
-      "id": "8eaeae55-55ff-4869-810e-c15807234bf8",
-      "name": "Edit Fields",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -672,
-        -752
-      ]
+      }
     },
     {
+      "id": "ed650beb-2b0a-428a-bf64-55cf4a3a48b1",
+      "name": "Mensagem Válida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -448,
+        -752
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -81,17 +93,21 @@
           "combinator": "and"
         },
         "options": {}
-      },
-      "id": "ed650beb-2b0a-428a-bf64-55cf4a3a48b1",
-      "name": "Mensagem Válida?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        -448,
-        -752
-      ]
+      }
     },
     {
+      "id": "4375e617-e4fc-448c-9099-4abf0f25b0ba",
+      "name": "Buscar Pendentes Comercial",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        -16,
+        -864
+      ],
       "parameters": {
         "resource": "item",
         "site": {
@@ -116,15 +132,6 @@
         "simplify": false,
         "requestOptions": {}
       },
-      "id": "4375e617-e4fc-448c-9099-4abf0f25b0ba",
-      "name": "Buscar Pendentes Comercial",
-      "type": "n8n-nodes-base.microsoftSharePoint",
-      "typeVersion": 1,
-      "position": [
-        -240,
-        -864
-      ],
-      "alwaysOutputData": true,
       "credentials": {
         "microsoftSharePointOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
@@ -132,19 +139,30 @@
       }
     },
     {
-      "parameters": {
-        "jsCode": "// Escolhe o cliente que vai receber a justificativa.\n// - Veio do Lists (itemIdDireto): usa exatamente esse item, se ainda estiver pendente.\n// - Veio do WhatsApp: usa o pendente mais antigo desta área.\nconst e = $('Edit Fields').first().json;\nconst pend = $input.all().map(i => i.json)\n  .filter(j => j && j.id && j.fields && j.fields.StatusComercial === 'Aguardando Observação');\nif (!pend.length) return [];\nlet alvo;\nif (e.itemIdDireto) {\n  alvo = pend.find(j => String(j.id) === String(e.itemIdDireto));\n} else {\n  const data = j => new Date(j.fields.DataRespostaComercial || j.fields.Modified || 0).getTime();\n  alvo = pend.sort((a, b) => data(a) - data(b))[0];\n}\nif (!alvo) return [];\nreturn [{ json: {\n  itemIdSharePoint: String(alvo.id),\n  cliente: alvo.fields.NomedoCliente || '',\n  endereco: alvo.fields.Title || '',\n  restantes: pend.length - 1\n} }];"
-      },
       "id": "758266a6-e5ce-4ae5-a9cb-dcea7d333ccf",
       "name": "Identificar Item",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -16,
+        208,
         -864
-      ]
+      ],
+      "parameters": {
+        "jsCode": "// ===== Representante comercial do bolsão (encerramento) =====\n// O responsável de cada bolsão vem da coluna \"Responsável\" da lista \"Matriz Bolsões\" (SharePoint).\n// O bolsão do encerramento vem da coluna \"Bolsão\" (linha \"Bolsão:\" do e-mail); se vier vazio, tenta pelo endereço.\nconst REPRESENTANTES = {\n  'exemplo1@exemplo.com':  '5511999999999',   // Responsável A\n  'exemplo2@exemplo.com': '5511999999999',   // Responsável B\n};\n// Recebe sempre. Também é o único destino quando o bolsão não é encontrado na Matriz.\nconst SEMPRE = [\n  '5511999999999',          // Responsável pela automação\n];\n// EM TESTE: true = cada representante é trocado pelo número de teste abaixo.\n// Para colocar em produção, troque para false.\nconst MODO_TESTE = true;\nconst NUMEROS_TESTE = {\n  'exemplo1@exemplo.com':  '5511999999999',   // bolsões do Responsável A → Responsável pela automação\n  'exemplo2@exemplo.com': '5511999999999',   // bolsões da Ana → Responsável pela automação\n};\n\nconst norm = s => ' ' + String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()\n  .replace(/[^a-z0-9]+/g, ' ')\n  .replace(/\\b(rua|r|av|avenida|alameda|al|praca|travessa|estrada|bolsao)\\b/g, ' ')\n  .replace(/\\s+/g, ' ').trim() + ' ';\n\n// Procura o bolsão na Matriz (ignora acentos, maiúsculas e \"Rua\", \"Av.\" etc.)\nconst acharBolsao = (textos, matriz) => {\n  for (const t of textos) {\n    const alvo = norm(t);\n    if (alvo.trim().length < 3) continue;\n    const achados = (matriz || []).filter(b => {\n      const n = norm(b.Title);\n      return n.trim().length >= 3 && (alvo.includes(n) || n.includes(alvo));\n    });\n    if (achados.length) return achados.sort((a, b) => norm(b.Title).length - norm(a.Title).length)[0];\n  }\n  return null;\n};\n\nconst bolsaoDoItem = f => f.Bols_x00e3_o || f.Bolsao || '';\n\nconst representante = (f, resposta) => {\n  const lista = resposta && Array.isArray(resposta.value) ? resposta.value : null;\n  const b = lista ? acharBolsao([bolsaoDoItem(f), f.Title], lista) : null;\n  const resp = (b && b.Respons_x00e1_vel) || {};\n  const email = String(resp.EMail || '').toLowerCase();\n  const tel = MODO_TESTE ? NUMEROS_TESTE[email] : REPRESENTANTES[email];\n  let aviso = '';\n  if (!lista) aviso = 'Não foi possível consultar a Matriz Bolsões. Mensagem enviada só para o responsável pela automação.';\n  else if (!b) aviso = `Bolsão \"${bolsaoDoItem(f) || 'não informado'}\" não encontrado na Matriz Bolsões. Mensagem enviada só para o responsável pela automação.`;\n  else if (!tel) aviso = `Responsável \"${resp.Title || 'não preenchido'}\" do bolsão ${b.Title} sem WhatsApp cadastrado na automação.`;\n  if (MODO_TESTE && tel) aviso = `MODO TESTE – em produção esta mensagem iria para ${resp.Title} (${REPRESENTANTES[email] || 'sem número'}).`;\n  return {\n    bolsao: b ? b.Title : (bolsaoDoItem(f) || null),\n    representante: tel ? (resp.Title || null) : null,\n    // em teste vai só para o número de teste do representante; em produção, representante + SEMPRE\n    numeros: MODO_TESTE ? (tel ? [tel] : SEMPRE) : (tel ? [tel] : []).concat(SEMPRE),\n    aviso,\n  };\n};\n\nconst valido = n => String(n).replace(/\\D/g, '');\nconst listaChat = arr => [...new Set(arr.map(valido).filter(n => n.length >= 12 && n.length <= 13))].map(n => n + '@c.us');\n\n// Escolhe o cliente que vai receber a justificativa.\n// - Veio do Lists (itemIdDireto): usa exatamente esse item, se ainda estiver pendente.\n// - Veio do WhatsApp: usa o pendente mais antigo desta área.\nconst e = $('Edit Fields').first().json;\nlet pend = $input.all().map(i => i.json)\n  .filter(j => j && j.id && j.fields && j.fields.StatusComercial === 'Aguardando Observação');\n// Veio do WhatsApp: só os clientes dos bolsões de quem respondeu (o Responsável pela automação vê os sem responsável)\nif (!e.itemIdDireto) {\n  const matriz = $('Buscar Matriz Bolsões').first().json;\n  const tel = valido(e.telefone);\n  pend = pend.filter(j => representante(j.fields, matriz).numeros.map(valido).includes(tel));\n}\nif (!pend.length) return [];\nlet alvo;\nif (e.itemIdDireto) {\n  alvo = pend.find(j => String(j.id) === String(e.itemIdDireto));\n} else {\n  const data = j => new Date(j.fields.DataRespostaComercial || j.fields.Modified || 0).getTime();\n  alvo = pend.sort((a, b) => data(a) - data(b))[0];\n}\nif (!alvo) return [];\nreturn [{ json: {\n  itemIdSharePoint: String(alvo.id),\n  cliente: alvo.fields.NomedoCliente || '',\n  endereco: alvo.fields.Title || '',\n  restantes: pend.length - 1\n} }];"
+      }
     },
     {
+      "id": "1b653d9f-bfc3-44a2-ac10-0656d5291f36",
+      "name": "Update item in a list",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        432,
+        -864
+      ],
       "parameters": {
         "resource": "item",
         "operation": "update",
@@ -176,14 +194,6 @@
         },
         "requestOptions": {}
       },
-      "id": "1b653d9f-bfc3-44a2-ac10-0656d5291f36",
-      "name": "Update item in a list",
-      "type": "n8n-nodes-base.microsoftSharePoint",
-      "typeVersion": 1,
-      "position": [
-        208,
-        -864
-      ],
       "credentials": {
         "microsoftSharePointOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
@@ -191,6 +201,17 @@
       }
     },
     {
+      "id": "553b0d07-fbfd-4999-b8f1-8581afcf5cb6",
+      "name": "Get an item",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        656,
+        -864
+      ],
       "parameters": {
         "resource": "item",
         "operation": "get",
@@ -214,14 +235,6 @@
         "simplify": false,
         "requestOptions": {}
       },
-      "id": "553b0d07-fbfd-4999-b8f1-8581afcf5cb6",
-      "name": "Get an item",
-      "type": "n8n-nodes-base.microsoftSharePoint",
-      "typeVersion": 1,
-      "position": [
-        432,
-        -864
-      ],
       "credentials": {
         "microsoftSharePointOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
@@ -229,6 +242,14 @@
       }
     },
     {
+      "id": "5812801c-520f-4011-813b-b70b49111cbb",
+      "name": "Aviso Prévio já venceu?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        880,
+        -864
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -252,17 +273,20 @@
           "combinator": "and"
         },
         "options": {}
-      },
-      "id": "5812801c-520f-4011-813b-b70b49111cbb",
-      "name": "Aviso Prévio já venceu?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        656,
-        -864
-      ]
+      }
     },
     {
+      "id": "f7c98c7c-91df-4d74-b5b0-7d146bd2db4b",
+      "name": "Atualizar para Aguardando Operacional",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        1104,
+        -976
+      ],
       "parameters": {
         "resource": "item",
         "operation": "update",
@@ -293,14 +317,6 @@
         },
         "requestOptions": {}
       },
-      "id": "f7c98c7c-91df-4d74-b5b0-7d146bd2db4b",
-      "name": "Atualizar para Aguardando Operacional",
-      "type": "n8n-nodes-base.microsoftSharePoint",
-      "typeVersion": 1,
-      "position": [
-        880,
-        -976
-      ],
       "credentials": {
         "microsoftSharePointOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
@@ -308,6 +324,17 @@
       }
     },
     {
+      "id": "85b8907f-4bf5-4efa-be76-af5442d85146",
+      "name": "Buscar Dados Para Operacional",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        1328,
+        -976
+      ],
       "parameters": {
         "resource": "item",
         "operation": "get",
@@ -331,14 +358,6 @@
         "simplify": false,
         "requestOptions": {}
       },
-      "id": "85b8907f-4bf5-4efa-be76-af5442d85146",
-      "name": "Buscar Dados Para Operacional",
-      "type": "n8n-nodes-base.microsoftSharePoint",
-      "typeVersion": 1,
-      "position": [
-        1104,
-        -976
-      ],
       "credentials": {
         "microsoftSharePointOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
@@ -346,6 +365,14 @@
       }
     },
     {
+      "id": "127d704d-f716-4c1c-ae27-38b3b57b1587",
+      "name": "Preparar Dados Para Operacional",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1552,
+        -976
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -400,17 +427,17 @@
           ]
         },
         "options": {}
-      },
-      "id": "127d704d-f716-4c1c-ae27-38b3b57b1587",
-      "name": "Preparar Dados Para Operacional",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        1328,
-        -976
-      ]
+      }
     },
     {
+      "id": "63b742bd-7c87-4363-b528-1a229a3082e6",
+      "name": "Call 'Enviar Encerramento ao Operacional'",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1776,
+        -976
+      ],
       "parameters": {
         "workflowId": {
           "__rl": true,
@@ -427,17 +454,20 @@
           "convertFieldsToString": true
         },
         "options": {}
-      },
-      "id": "63b742bd-7c87-4363-b528-1a229a3082e6",
-      "name": "Call 'Enviar Encerramento ao Operacional'",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.3,
-      "position": [
-        1552,
-        -976
-      ]
+      }
     },
     {
+      "id": "5ac7c69e-3838-42b6-a081-4c1a41e115c7",
+      "name": "Atualizar para Aguardando Aviso Prévio",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        1104,
+        -752
+      ],
       "parameters": {
         "resource": "item",
         "operation": "update",
@@ -468,14 +498,42 @@
         },
         "requestOptions": {}
       },
-      "id": "5ac7c69e-3838-42b6-a081-4c1a41e115c7",
-      "name": "Atualizar para Aguardando Aviso Prévio",
-      "type": "n8n-nodes-base.microsoftSharePoint",
-      "typeVersion": 1,
+      "credentials": {
+        "microsoftSharePointOAuth2Api": {
+          "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
+        }
+      }
+    },
+    {
+      "id": "7d21bfa9-5f9e-4973-a0f7-aa801524ea06",
+      "name": "Buscar Matriz Bolsões",
+      "notes": "Lista 'Matriz Bolsões' (Gestão Operacional): responsável e Kit de Boas-Vindas de cada bolsão.",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput",
       "position": [
-        880,
-        -752
+        -240,
+        -864
       ],
+      "parameters": {
+        "url": "https://SEU-TENANT.sharepoint.com/sites/SEU-SITE/_api/web/lists(guid'<<PREENCHER>>')/items?$select=Id,Title,Respons_x00e1_vel/Title,Respons_x00e1_vel/EMail,AttachmentFiles&$expand=Respons_x00e1_vel,AttachmentFiles&$top=500",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "microsoftSharePointOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json;odata=nometadata"
+            }
+          ]
+        },
+        "options": {}
+      },
       "credentials": {
         "microsoftSharePointOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
@@ -510,7 +568,7 @@
       "main": [
         [
           {
-            "node": "Buscar Pendentes Comercial",
+            "node": "Buscar Matriz Bolsões",
             "type": "main",
             "index": 0
           }
@@ -611,9 +669,20 @@
           }
         ]
       ]
+    },
+    "Buscar Matriz Bolsões": {
+      "main": [
+        [
+          {
+            "node": "Buscar Pendentes Comercial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": false,
+  "nodeGroups": [],
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
@@ -622,6 +691,5 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "nodeGroups": [],
   "tags": []
 }

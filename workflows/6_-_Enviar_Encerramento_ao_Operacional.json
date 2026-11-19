@@ -1,20 +1,27 @@
 {
   "name": "6 - Enviar Encerramento ao Operacional",
+  "description": null,
+  "active": false,
+  "versionCounter": 104,
+  "sourceWorkflowId": null,
   "nodes": [
     {
+      "id": "a8f3e38a-9d96-4830-962b-9b0e31ed9709",
+      "name": "Receber Cliente do Encerramento",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        1120,
+        -48
+      ],
       "parameters": {
         "operation": "set",
         "key": "={{ 'encerramento:operacional:' + $('Enviar Enquete Para Coordenador Operacional').item.json.id.split('_').pop() }}",
         "value": "={{ $('Entrada Operacional').item.json.itemId }}"
       },
-      "id": "a8f3e38a-9d96-4830-962b-9b0e31ed9709",
-      "name": "Receber Cliente do Encerramento",
-      "type": "n8n-nodes-base.redis",
-      "typeVersion": 1,
-      "position": [
-        672,
-        -48
-      ],
       "credentials": {
         "redis": {
           "name": "<<CRIAR CREDENCIAL redis>>"
@@ -22,9 +29,6 @@
       }
     },
     {
-      "parameters": {
-        "inputSource": "passthrough"
-      },
       "id": "f1eb8404-c3b0-42be-94df-bcb0d38fe452",
       "name": "Entrada Operacional",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
@@ -32,27 +36,44 @@
       "position": [
         0,
         48
-      ]
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
     },
     {
+      "id": "9cc4e636-ab03-4437-9bca-007fa9b3fcfe",
+      "name": "Enviar Enquete Para Coordenador Operacional",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        896,
+        -48
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://127.0.0.1:3000/api/sendPoll",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"session\": \"automacao_encerramento_and_adesao\",\n  \"chatId\": \"<<PREENCHER>>\",\n  \"poll\": {\n    \"name\": \"🚨 ENCERRAMENTO OPERACIONAL\\n\\n👤 Nome: {{ $('Entrada Operacional').item.json.nomeCliente }}\\n📍 Endereço: {{ $('Entrada Operacional').item.json.endereco }}\\n📝 Motivo: {{ $('Entrada Operacional').item.json.motivo }}\\n📧 E-mail: {{ $('Entrada Operacional').item.json.email }}\\n📞 Telefone: {{ $('Entrada Operacional').item.json.telefone }}\\n📅 Aviso Prévio: {{ $('Entrada Operacional').item.json.avisoPrevioFormatado }}\\n\\nFavor retirar a placa da residência do cliente.\",\n    \"options\": [\n      \"✅ Placa Retirada\",\n      \"⚠️ Placa Não Retirada\"\n    ],\n    \"multipleAnswers\": false\n  }\n}",
+        "jsonBody": "={{ JSON.stringify({ session: 'automacao_encerramento_and_adesao', chatId: '<<PREENCHER>>', poll: { name: $('Montar Mensagens - Encerramento').item.json.operacional.enquete, options: ['✅ Placa Retirada', '⚠️ Placa Não Retirada'], multipleAnswers: false } }) }}",
         "options": {}
-      },
-      "id": "9cc4e636-ab03-4437-9bca-007fa9b3fcfe",
-      "name": "Enviar Enquete Para Coordenador Operacional",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        448,
-        -48
-      ]
+      }
     },
     {
+      "id": "387d1d23-cc21-4c2e-a87e-8801f7746573",
+      "name": "Update item in a list",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        224,
+        48
+      ],
       "parameters": {
         "resource": "item",
         "operation": "update",
@@ -400,14 +421,6 @@
         },
         "requestOptions": {}
       },
-      "id": "387d1d23-cc21-4c2e-a87e-8801f7746573",
-      "name": "Update item in a list",
-      "type": "n8n-nodes-base.microsoftSharePoint",
-      "typeVersion": 1,
-      "position": [
-        224,
-        48
-      ],
       "credentials": {
         "microsoftSharePointOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
@@ -415,37 +428,43 @@
       }
     },
     {
+      "id": "cded1b52-05fc-41e2-ae55-211121f7af70",
+      "name": "Enviar Confirmação para Sistemas",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        896,
+        144
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://127.0.0.1:3000/api/sendPoll",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"session\": \"automacao_encerramento_and_adesao\",\n  \"chatId\": \"<<PREENCHER>>\",\n  \"poll\": {\n    \"name\": \"🖥️ RETIRADA DE SISTEMAS\\n\\n👤 Nome: {{ $('Entrada Operacional').item.json.nomeCliente }}\\n📍 Endereço: {{ $('Entrada Operacional').item.json.endereco }}\\n📝 Motivo: {{ $('Entrada Operacional').item.json.motivo }}\\n📧 E-mail: {{ $('Entrada Operacional').item.json.email }}\\n📞 Telefone: {{ $('Entrada Operacional').item.json.telefone }}\\n📅 Aviso Prévio: {{ $('Entrada Operacional').item.json.avisoPrevioFormatado }}\\n\\nFavor retirar o cliente de todos os sistemas.\\n\\nConfirme quando a retirada estiver concluída.\",\n    \"options\": [\n      \"✅ Retirado dos Sistemas\",\n      \"⏳ Ainda não retirado\"\n    ],\n    \"multipleAnswers\": false\n  }\n}",
+        "jsonBody": "={{ JSON.stringify({ session: 'automacao_encerramento_and_adesao', chatId: '<<PREENCHER>>', poll: { name: $('Montar Mensagens - Encerramento').item.json.sistemas.enquete, options: ['✅ Retirado dos Sistemas', '⏳ Ainda não retirado'], multipleAnswers: false } }) }}",
         "options": {}
-      },
-      "id": "cded1b52-05fc-41e2-ae55-211121f7af70",
-      "name": "Enviar Confirmação para Sistemas",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        448,
-        144
-      ]
+      }
     },
     {
+      "id": "17d4c84a-59c0-443e-b48c-ceb7f9722f5a",
+      "name": "Receber Cliente do Encerramento1",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        1120,
+        144
+      ],
       "parameters": {
         "operation": "set",
         "key": "={{ 'encerramento:sistemas:' + $('Enviar Confirmação para Sistemas').item.json.id.split('_').pop() }}",
         "value": "={{ $('Entrada Operacional').item.json.itemId }}"
       },
-      "id": "17d4c84a-59c0-443e-b48c-ceb7f9722f5a",
-      "name": "Receber Cliente do Encerramento1",
-      "type": "n8n-nodes-base.redis",
-      "typeVersion": 1,
-      "position": [
-        672,
-        144
-      ],
       "credentials": {
         "redis": {
           "name": "<<CRIAR CREDENCIAL redis>>"
@@ -453,6 +472,18 @@
       }
     },
     {
+      "id": "fb5c0099-c7df-4b4d-8897-f480aad1212a",
+      "name": "Salvar PollKey Operacional",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput",
+      "position": [
+        1344,
+        -48
+      ],
       "parameters": {
         "resource": "item",
         "operation": "update",
@@ -506,22 +537,25 @@
         },
         "requestOptions": {}
       },
-      "id": "fb5c0099-c7df-4b4d-8897-f480aad1212a",
-      "name": "Salvar PollKey Operacional",
-      "type": "n8n-nodes-base.microsoftSharePoint",
-      "typeVersion": 1,
-      "position": [
-        896,
-        -48
-      ],
       "credentials": {
         "microsoftSharePointOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
         }
-      },
-      "onError": "continueRegularOutput"
+      }
     },
     {
+      "id": "45869fc2-5127-4771-a8ae-1e79edd03c2b",
+      "name": "Salvar PollKey Sistemas",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput",
+      "position": [
+        1344,
+        144
+      ],
       "parameters": {
         "resource": "item",
         "operation": "update",
@@ -575,20 +609,68 @@
         },
         "requestOptions": {}
       },
-      "id": "45869fc2-5127-4771-a8ae-1e79edd03c2b",
-      "name": "Salvar PollKey Sistemas",
-      "type": "n8n-nodes-base.microsoftSharePoint",
-      "typeVersion": 1,
-      "position": [
-        896,
-        144
-      ],
       "credentials": {
         "microsoftSharePointOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
         }
-      },
-      "onError": "continueRegularOutput"
+      }
+    },
+    {
+      "id": "ae99ea42-ca91-448b-9b88-5e5df961afd6",
+      "name": "Montar Mensagens - Encerramento",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        48
+      ],
+      "parameters": {
+        "jsCode": "\n// ----- Padrão das mensagens (igual à adesão) -----\nconst dataBR = d => { if (!d) return 'Não informada'; const dt = DateTime.fromISO(String(d)).setZone('America/Sao_Paulo'); return dt.isValid ? dt.toFormat('dd/MM/yyyy') : String(d); };\nconst blocoEncerramento = (f, bolsao) => [\n  `🏘️ *Bolsão:* ${bolsao || f.Bols_x00e3_o || f.Bolsao || 'Não informado'}`,\n  '',\n  `👤 *Cliente:* ${f.NomedoCliente || 'Não informado'}`,\n  `📍 *Endereço:* ${f.Title || 'Não informado'}`,\n  `📞 *Telefone:* ${f.ContatodoCliente || 'Não informado'}`,\n  `📧 *E-mail:* ${f.E_x002d_MaildoCliente || 'Não informado'}`,\n  `📝 *Motivo:* ${f.Motivo || 'Não informado'}`,\n  `📅 *Data do encerramento:* ${dataBR(f.AvisoPrevio)}`,\n].join('\\n');\n\n// Dados do item (resposta do SharePoint); se faltar, usa o que veio na chamada\nconst e = $('Entrada Operacional').first().json;\nconst f = Object.assign({ NomedoCliente: e.nomeCliente, Title: e.endereco, ContatodoCliente: e.telefone,\n  E_x002d_MaildoCliente: e.email, Motivo: e.motivo, AvisoPrevio: e.avisoPrevio, Bols_x00e3_o: e.bolsao },\n  $('Update item in a list').first().json.fields || {});\nconst montar = (area, acao) => ({\n  detalhes: `🚨 *ENCERRAMENTO DE CLIENTE – ${area}*\\n\\n${blocoEncerramento(f)}`,\n  enquete: `📌 Ação necessária:\\n${acao}`.slice(0, 255),\n});\nreturn [{ json: {\n  operacional: montar('OPERACIONAL', 'Retirar a placa da residência do cliente.'),\n  sistemas: montar('SISTEMAS', 'Retirar o cliente de todos os sistemas.'),\n} }];\n"
+      }
+    },
+    {
+      "id": "24d9f492-5217-455b-9d11-199827923bc0",
+      "name": "Detalhes - Encerramento Operacional",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput",
+      "position": [
+        672,
+        -48
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/sendText",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ session: 'automacao_encerramento_and_adesao', chatId: '<<PREENCHER>>', text: $('Montar Mensagens - Encerramento').item.json.operacional.detalhes }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "686b69ea-c266-496d-9b2d-2743f81e3ce5",
+      "name": "Detalhes - Encerramento Sistemas",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput",
+      "position": [
+        672,
+        144
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/sendText",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ session: 'automacao_encerramento_and_adesao', chatId: '<<PREENCHER>>', text: $('Montar Mensagens - Encerramento').item.json.sistemas.detalhes }) }}",
+        "options": {}
+      }
     }
   ],
   "connections": {
@@ -618,12 +700,7 @@
       "main": [
         [
           {
-            "node": "Enviar Enquete Para Coordenador Operacional",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Enviar Confirmação para Sistemas",
+            "node": "Montar Mensagens - Encerramento",
             "type": "main",
             "index": 0
           }
@@ -662,9 +739,47 @@
           }
         ]
       ]
+    },
+    "Montar Mensagens - Encerramento": {
+      "main": [
+        [
+          {
+            "node": "Detalhes - Encerramento Operacional",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Detalhes - Encerramento Sistemas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detalhes - Encerramento Operacional": {
+      "main": [
+        [
+          {
+            "node": "Enviar Enquete Para Coordenador Operacional",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detalhes - Encerramento Sistemas": {
+      "main": [
+        [
+          {
+            "node": "Enviar Confirmação para Sistemas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": false,
+  "nodeGroups": [],
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
@@ -673,6 +788,5 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "nodeGroups": [],
   "tags": []
 }

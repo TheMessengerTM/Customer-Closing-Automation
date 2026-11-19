@@ -1,12 +1,11 @@
 {
   "name": "3 - Webhook de Mensagem do Comercial",
+  "description": null,
+  "active": false,
+  "versionCounter": 254,
+  "sourceWorkflowId": null,
   "nodes": [
     {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "Resposta-Enquete-Comercial",
-        "options": {}
-      },
       "id": "64ae8c87-3f19-4414-885b-335ae3a1f8d4",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
@@ -14,9 +13,22 @@
       "position": [
         0,
         -176
-      ]
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "Resposta-Enquete-Comercial",
+        "options": {}
+      }
     },
     {
+      "id": "129971ad-3f1d-4cb3-ba81-3cf46e12cae5",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        -176
+      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -41,17 +53,20 @@
           ]
         },
         "options": {}
-      },
-      "id": "129971ad-3f1d-4cb3-ba81-3cf46e12cae5",
-      "name": "Edit Fields",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.5,
-      "position": [
-        224,
-        -176
-      ]
+      }
     },
     {
+      "id": "f8783506-0171-4dbf-b794-2fafcdedec8e",
+      "name": "Atualizar item se for Recuperado",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        1120,
+        -272
+      ],
       "parameters": {
         "resource": "item",
         "operation": "update",
@@ -401,14 +416,6 @@
         },
         "requestOptions": {}
       },
-      "id": "f8783506-0171-4dbf-b794-2fafcdedec8e",
-      "name": "Atualizar item se for Recuperado",
-      "type": "n8n-nodes-base.microsoftSharePoint",
-      "typeVersion": 1,
-      "position": [
-        1120,
-        -272
-      ],
       "credentials": {
         "microsoftSharePointOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
@@ -416,20 +423,23 @@
       }
     },
     {
+      "id": "ae92cc62-8a5d-4cd4-b8b6-04ebdb6ac569",
+      "name": "Armazenar Resposta",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        448,
+        -176
+      ],
       "parameters": {
         "operation": "get",
         "propertyName": "itemIdSharePoint",
         "key": "={{ 'encerramento:poll:' + $json.EventoKey }}",
         "options": {}
       },
-      "id": "ae92cc62-8a5d-4cd4-b8b6-04ebdb6ac569",
-      "name": "Armazenar Resposta",
-      "type": "n8n-nodes-base.redis",
-      "typeVersion": 1,
-      "position": [
-        448,
-        -176
-      ],
       "credentials": {
         "redis": {
           "name": "<<CRIAR CREDENCIAL redis>>"
@@ -437,6 +447,14 @@
       }
     },
     {
+      "id": "9d5bd269-0810-4834-9698-ccaf1247b9ce",
+      "name": "Condição",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        -176
+      ],
       "parameters": {
         "rules": {
           "values": [
@@ -492,29 +510,24 @@
           ]
         },
         "options": {}
-      },
-      "id": "9d5bd269-0810-4834-9698-ccaf1247b9ce",
-      "name": "Condição",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.4,
-      "position": [
-        896,
-        -176
-      ]
+      }
     },
     {
-      "parameters": {
-        "operation": "delete",
-        "key": "={{ 'encerramento:poll:' + $('Edit Fields').item.json.EventoKey }}"
-      },
       "id": "aeae9b52-cefe-4691-95c2-213b36641b2f",
       "name": "Deletar Chaves",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
       "position": [
         1344,
         -272
       ],
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'encerramento:poll:' + $('Edit Fields').item.json.EventoKey }}"
+      },
       "credentials": {
         "redis": {
           "name": "<<CRIAR CREDENCIAL redis>>"
@@ -522,6 +535,17 @@
       }
     },
     {
+      "id": "5871cf4e-d718-4ab6-9d4e-058ab796759c",
+      "name": "Atualizar Status Comercial para Aguardando Observação",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        1120,
+        -80
+      ],
       "parameters": {
         "resource": "item",
         "operation": "update",
@@ -843,14 +867,6 @@
         },
         "requestOptions": {}
       },
-      "id": "5871cf4e-d718-4ab6-9d4e-058ab796759c",
-      "name": "Atualizar Status Comercial para Aguardando Observação",
-      "type": "n8n-nodes-base.microsoftSharePoint",
-      "typeVersion": 1,
-      "position": [
-        1120,
-        -80
-      ],
       "credentials": {
         "microsoftSharePointOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
@@ -858,19 +874,22 @@
       }
     },
     {
+      "id": "2c662d4b-3ae8-4daa-a846-732cb02b9c8c",
+      "name": "Redis",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        2016,
+        -80
+      ],
       "parameters": {
         "operation": "set",
         "key": "={{ 'encerramento:justificativa-comercial:' + String($('Pedir Justificativa').item.json.id ?? $('Pedir Justificativa').item.json._data?.Info?.ID ?? '').split('_').pop() }}",
         "value": "={{ $('Atualizar Status Comercial para Aguardando Observação').item.json.id }}"
       },
-      "id": "2c662d4b-3ae8-4daa-a846-732cb02b9c8c",
-      "name": "Redis",
-      "type": "n8n-nodes-base.redis",
-      "typeVersion": 1,
-      "position": [
-        1568,
-        -80
-      ],
       "credentials": {
         "redis": {
           "name": "<<CRIAR CREDENCIAL redis>>"
@@ -878,36 +897,42 @@
       }
     },
     {
+      "id": "aa16478e-49b9-4763-b37d-fcd21e2205c3",
+      "name": "Pedir Justificativa",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        1792,
+        -80
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://127.0.0.1:3000/api/sendText",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"session\": \"automacao_encerramento_and_adesao\",\n  \"chatId\": \"<<PREENCHER>>\",\n  \"text\": \"📝 JUSTIFICATIVA COMERCIAL\\n\\n👤 Nome: {{ $json.fields.NomedoCliente }}\\n📍 Endereço: {{ $json.fields.Title }}\\n📝 Motivo: {{ $json.fields.Motivo }}\\n📧 E-mail: {{ $json.fields.E_x002d_MaildoCliente }}\\n📞 Telefone: {{ $json.fields.ContatodoCliente }}\\n📅 Aviso Prévio: {{ DateTime.fromISO($json.fields.AvisoPrevio).setZone('America/Sao_Paulo').toFormat('dd/MM/yyyy') }}\\n\\nO cliente foi marcado como NÃO RECUPERADO.\\n\\nPor favor, informe o motivo pelo qual não foi possível recuperar o cliente.\\n\\n✍️ Envie a justificativa nesta conversa\"\n}",
+        "jsonBody": "={{ JSON.stringify({ session: 'automacao_encerramento_and_adesao', chatId: $json.chatId, text: $json.texto }) }}",
         "options": {}
-      },
-      "id": "aa16478e-49b9-4763-b37d-fcd21e2205c3",
-      "name": "Pedir Justificativa",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        1344,
-        -80
-      ]
+      }
     },
     {
-      "parameters": {
-        "operation": "delete",
-        "key": "={{ 'encerramento:poll:' + $('Edit Fields').item.json.EventoKey }}"
-      },
       "id": "0c8ea188-2d34-4f42-aff5-f76e550dcc1a",
       "name": "Redis1",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
       "position": [
-        1792,
+        2240,
         -80
       ],
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'encerramento:poll:' + $('Edit Fields').item.json.EventoKey }}"
+      },
       "credentials": {
         "redis": {
           "name": "<<CRIAR CREDENCIAL redis>>"
@@ -915,6 +940,14 @@
       }
     },
     {
+      "id": "d27b47b5-105f-4570-b3e6-fb5e73fbb91a",
+      "name": "Enquete Encontrada?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        -176
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -938,15 +971,97 @@
           "combinator": "and"
         },
         "options": {}
-      },
-      "id": "d27b47b5-105f-4570-b3e6-fb5e73fbb91a",
-      "name": "Enquete Encontrada?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
+      }
+    },
+    {
+      "id": "55f49854-4abe-417e-92f3-35382de97dbd",
+      "name": "Buscar Matriz Bolsões",
+      "notes": "Lista 'Matriz Bolsões' (Gestão Operacional): responsável e Kit de Boas-Vindas de cada bolsão.",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput",
       "position": [
-        672,
-        -176
-      ]
+        1344,
+        -80
+      ],
+      "parameters": {
+        "url": "https://SEU-TENANT.sharepoint.com/sites/SEU-SITE/_api/web/lists(guid'<<PREENCHER>>')/items?$select=Id,Title,Respons_x00e1_vel/Title,Respons_x00e1_vel/EMail,AttachmentFiles&$expand=Respons_x00e1_vel,AttachmentFiles&$top=500",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "microsoftSharePointOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json;odata=nometadata"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "microsoftSharePointOAuth2Api": {
+          "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
+        }
+      }
+    },
+    {
+      "id": "fd8aafb4-f668-405d-9275-1cc72d550b6a",
+      "name": "Destinatários - Justificativa",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1568,
+        -80
+      ],
+      "parameters": {
+        "jsCode": "// ===== Representante comercial do bolsão (encerramento) =====\n// O responsável de cada bolsão vem da coluna \"Responsável\" da lista \"Matriz Bolsões\" (SharePoint).\n// O bolsão do encerramento vem da coluna \"Bolsão\" (linha \"Bolsão:\" do e-mail); se vier vazio, tenta pelo endereço.\nconst REPRESENTANTES = {\n  'exemplo1@exemplo.com':  '5511999999999',   // Responsável A\n  'exemplo2@exemplo.com': '5511999999999',   // Responsável B\n};\n// Recebe sempre. Também é o único destino quando o bolsão não é encontrado na Matriz.\nconst SEMPRE = [\n  '5511999999999',          // Responsável pela automação\n];\n// EM TESTE: true = cada representante é trocado pelo número de teste abaixo.\n// Para colocar em produção, troque para false.\nconst MODO_TESTE = true;\nconst NUMEROS_TESTE = {\n  'exemplo1@exemplo.com':  '5511999999999',   // bolsões do Responsável A → Responsável pela automação\n  'exemplo2@exemplo.com': '5511999999999',   // bolsões da Ana → Responsável pela automação\n};\n\nconst norm = s => ' ' + String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()\n  .replace(/[^a-z0-9]+/g, ' ')\n  .replace(/\\b(rua|r|av|avenida|alameda|al|praca|travessa|estrada|bolsao)\\b/g, ' ')\n  .replace(/\\s+/g, ' ').trim() + ' ';\n\n// Procura o bolsão na Matriz (ignora acentos, maiúsculas e \"Rua\", \"Av.\" etc.)\nconst acharBolsao = (textos, matriz) => {\n  for (const t of textos) {\n    const alvo = norm(t);\n    if (alvo.trim().length < 3) continue;\n    const achados = (matriz || []).filter(b => {\n      const n = norm(b.Title);\n      return n.trim().length >= 3 && (alvo.includes(n) || n.includes(alvo));\n    });\n    if (achados.length) return achados.sort((a, b) => norm(b.Title).length - norm(a.Title).length)[0];\n  }\n  return null;\n};\n\nconst bolsaoDoItem = f => f.Bols_x00e3_o || f.Bolsao || '';\n\nconst representante = (f, resposta) => {\n  const lista = resposta && Array.isArray(resposta.value) ? resposta.value : null;\n  const b = lista ? acharBolsao([bolsaoDoItem(f), f.Title], lista) : null;\n  const resp = (b && b.Respons_x00e1_vel) || {};\n  const email = String(resp.EMail || '').toLowerCase();\n  const tel = MODO_TESTE ? NUMEROS_TESTE[email] : REPRESENTANTES[email];\n  let aviso = '';\n  if (!lista) aviso = 'Não foi possível consultar a Matriz Bolsões. Mensagem enviada só para o responsável pela automação.';\n  else if (!b) aviso = `Bolsão \"${bolsaoDoItem(f) || 'não informado'}\" não encontrado na Matriz Bolsões. Mensagem enviada só para o responsável pela automação.`;\n  else if (!tel) aviso = `Responsável \"${resp.Title || 'não preenchido'}\" do bolsão ${b.Title} sem WhatsApp cadastrado na automação.`;\n  if (MODO_TESTE && tel) aviso = `MODO TESTE – em produção esta mensagem iria para ${resp.Title} (${REPRESENTANTES[email] || 'sem número'}).`;\n  return {\n    bolsao: b ? b.Title : (bolsaoDoItem(f) || null),\n    representante: tel ? (resp.Title || null) : null,\n    responsavel: resp.Title || null,   // nome do responsável na Matriz (aparece na mensagem)\n    // em teste vai só para o número de teste do representante; em produção, representante + SEMPRE\n    numeros: MODO_TESTE ? (tel ? [tel] : SEMPRE) : (tel ? [tel] : []).concat(SEMPRE),\n    aviso,\n  };\n};\n\nconst valido = n => String(n).replace(/\\D/g, '');\nconst listaChat = arr => [...new Set(arr.map(valido).filter(n => n.length >= 12 && n.length <= 13))].map(n => n + '@c.us');\n\nconst matriz = $('Buscar Matriz Bolsões').first().json;\nconst item = $('Atualizar Status Comercial para Aguardando Observação').first().json;\nconst f = item.fields || {};\nconst r = representante(f, matriz);\n\n// ----- Padrão das mensagens (igual à adesão) -----\nconst dataBR = d => { if (!d) return 'Não informada'; const dt = DateTime.fromISO(String(d)).setZone('America/Sao_Paulo'); return dt.isValid ? dt.toFormat('dd/MM/yyyy') : String(d); };\nconst blocoEncerramento = (f, bolsao) => [\n  `🏘️ *Bolsão:* ${bolsao || f.Bols_x00e3_o || f.Bolsao || 'Não informado'}`,\n  '',\n  `👤 *Cliente:* ${f.NomedoCliente || 'Não informado'}`,\n  `📍 *Endereço:* ${f.Title || 'Não informado'}`,\n  `📞 *Telefone:* ${f.ContatodoCliente || 'Não informado'}`,\n  `📧 *E-mail:* ${f.E_x002d_MaildoCliente || 'Não informado'}`,\n  `📝 *Motivo:* ${f.Motivo || 'Não informado'}`,\n  `📅 *Data do encerramento:* ${dataBR(f.AvisoPrevio)}`,\n].join('\\n');\nconst texto = `📝 *JUSTIFICATIVA – COMERCIAL*\\n\\n${blocoEncerramento(f, r.bolsao)}`\n  + (r.aviso ? `\\n\\n⚠️ ${r.aviso}` : '')\n  + `\\n\\n📌 *Ação necessária:*\\nO cliente foi marcado como *não recuperado*. Informe o motivo pelo qual não foi possível recuperá-lo.\\n\\n✍️ Envie a justificativa nesta conversa.`;\nreturn listaChat(r.numeros).map(chatId => ({ json: { ...item, ...r, chatId, texto }, pairedItem: { item: 0 } }));\n"
+      }
+    },
+    {
+      "id": "4f6d87dc-6836-4665-a283-3705597415c1",
+      "name": "E-mail - Cliente Recuperado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        -464
+      ],
+      "parameters": {
+        "jsCode": "// ===== E-mail \"Cliente Recuperado\" para o Financeiro (padrão visual ASTER) =====\n// Quem envia o e-mail de encerramento é o Financeiro; ele é avisado quando o cliente é recuperado.\n// Cliente NÃO recuperado: nenhum e-mail.\nconst EMAIL_FINANCEIRO = 'exemplo3@exemplo.com';   // Faturamento (Financeiro)\n// EM TESTE: true = o e-mail vai para o e-mail de teste abaixo. Para produção, troque para false.\nconst MODO_TESTE = true;\nconst EMAIL_TESTE = 'exemplo4@exemplo.com';\n\nconst VERMELHO = '#c1291b';\nconst ESCURO = '#333333';\nconst CINZA = '#6b7280';\nconst BORDA = '#e5e7eb';\nconst VERDE = '#2e7d32';\nconst VERDE_CLARO = '#edf7ee';\nconst FONTE = \"'Segoe UI', Arial, Helvetica, sans-serif\";\n\nconst esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst data = (d, comHora) => {\n  if (!d) return 'Não informada';\n  const dt = DateTime.fromISO(String(d), { zone: 'utc' }).setZone('America/Sao_Paulo');\n  return dt.isValid ? dt.toFormat(comHora ? \"dd/MM/yyyy 'às' HH:mm\" : 'dd/MM/yyyy') : esc(d);\n};\n\nconst f = $('Atualizar item se for Recuperado').first().json.fields || {};\nconst cliente = f.NomedoCliente || 'Cliente';\nconst bolsao = f.Bols_x00e3_o || f.Bolsao || 'Não informado';\nconst email = f.E_x002d_MaildoCliente;\n\nconst linhaInfo = (rotulo, valor, destaque) => `\n<tr>\n  <td style=\"padding:9px 0;border-bottom:1px solid ${BORDA};font-family:${FONTE};font-size:13px;color:${CINZA};width:38%;\" valign=\"top\">${rotulo}</td>\n  <td style=\"padding:9px 0;border-bottom:1px solid ${BORDA};font-family:${FONTE};font-size:14px;color:${ESCURO};font-weight:${destaque ? 700 : 600};\" valign=\"top\">${valor}</td>\n</tr>`;\nconst titulo = t => `<div style=\"font-family:${FONTE};font-size:12px;font-weight:700;letter-spacing:1px;color:${VERMELHO};text-transform:uppercase;margin:26px 0 8px;\">${t}</div>`;\n\nconst avisoTeste = MODO_TESTE ? `\n  <tr><td style=\"padding:20px 32px 0;\">\n    <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\"><tr>\n      <td bgcolor=\"#fff8e1\" style=\"padding:10px 14px;border:1px dashed #f0b429;border-radius:6px;font-family:${FONTE};font-size:12px;color:#7a5a00;\">\n        <b>MODO TESTE</b> – em produção este e-mail iria para ${esc(EMAIL_FINANCEIRO)}.\n      </td>\n    </tr></table>\n  </td></tr>` : '';\n\nconst html = `<!DOCTYPE html><html lang=\"pt-BR\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"></head>\n<body style=\"margin:0;padding:0;background:#f3f4f6;\">\n<table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" bgcolor=\"#f3f4f6\"><tr><td align=\"center\" style=\"padding:28px 12px;\">\n<table role=\"presentation\" width=\"600\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"width:600px;max-width:600px;background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid ${BORDA};\">\n\n  <!-- Cabeçalho -->\n  <tr><td bgcolor=\"${VERMELHO}\" style=\"padding:22px 32px;\">\n    <div style=\"font-family:${FONTE};font-size:20px;font-weight:800;letter-spacing:3px;color:#ffffff;\">GRUPO ASTER</div>\n    <div style=\"font-family:${FONTE};font-size:13px;color:#fde2df;margin-top:2px;\">Encerramento de Cliente &nbsp;·&nbsp; Financeiro</div>\n  </td></tr>\n${avisoTeste}\n  <!-- Selo -->\n  <tr><td align=\"center\" style=\"padding:30px 32px 0;\">\n    <table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" align=\"center\"><tr>\n      <td width=\"56\" height=\"56\" align=\"center\" valign=\"middle\" bgcolor=\"${VERDE}\"\n          style=\"width:56px;height:56px;border-radius:28px;font-family:${FONTE};font-size:28px;font-weight:700;color:#ffffff;\">&#10003;</td>\n    </tr></table>\n    <div style=\"font-family:${FONTE};font-size:12px;font-weight:700;letter-spacing:1px;color:${VERDE};text-transform:uppercase;margin-top:14px;\">Encerramento cancelado</div>\n    <div style=\"font-family:${FONTE};font-size:24px;font-weight:700;color:${ESCURO};margin:4px 0 0;\">Cliente recuperado</div>\n    <div style=\"font-family:${FONTE};font-size:14px;color:${CINZA};margin-top:6px;\">${esc(cliente)} &nbsp;·&nbsp; Bolsão ${esc(bolsao)}</div>\n  </td></tr>\n\n  <!-- Chamada -->\n  <tr><td style=\"padding:22px 32px 0;\">\n    <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\"><tr>\n      <td width=\"4\" bgcolor=\"${VERDE}\" style=\"width:4px;\"></td>\n      <td bgcolor=\"${VERDE_CLARO}\" style=\"padding:14px 16px;font-family:${FONTE};font-size:14px;line-height:21px;color:${ESCURO};\">\n        O cliente da solicitação de encerramento enviada por você foi <b style=\"color:${VERDE};\">recuperado</b> e continua com o serviço.\n      </td>\n    </tr></table>\n  </td></tr>\n\n  <!-- Dados -->\n  <tr><td style=\"padding:0 32px 28px;\">\n    ${titulo('Dados do cliente')}\n    <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n      ${linhaInfo('Nome do cliente', esc(cliente), true)}\n      ${linhaInfo('Bolsão', esc(bolsao))}\n      ${linhaInfo('Endereço', esc(f.Title || 'Não informado'))}\n      ${linhaInfo('Telefone', esc(f.ContatodoCliente || 'Não informado'))}\n      ${linhaInfo('E-mail', email ? `<a href=\"mailto:${esc(email)}\" style=\"color:${VERMELHO};text-decoration:none;\">${esc(email)}</a>` : 'Não informado')}\n    </table>\n\n    ${titulo('Solicitação de encerramento')}\n    <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n      ${linhaInfo('Motivo informado', esc(f.Motivo || 'Não informado'))}\n      ${linhaInfo('Data do encerramento', data(f.AvisoPrevio))}\n      ${linhaInfo('Recuperado em', data(f.DataRespostaComercial || DateTime.now().toISO(), true), true)}\n    </table>\n  </td></tr>\n\n  <!-- Rodapé -->\n  <tr><td bgcolor=\"#f9fafb\" style=\"padding:16px 32px;border-top:1px solid ${BORDA};font-family:${FONTE};font-size:11px;line-height:17px;color:${CINZA};\">\n    Mensagem automática da Automação de Encerramento de Clientes — Grupo ASTER. Não responda este e-mail.\n  </td></tr>\n\n</table>\n</td></tr></table>\n</body></html>`;\n\nreturn [{ json: {\n  para: MODO_TESTE ? EMAIL_TESTE : EMAIL_FINANCEIRO,\n  assunto: `✅ Cliente Recuperado – ${cliente} (${bolsao})`,\n  corpo: html,\n} }];\n"
+      }
+    },
+    {
+      "id": "634e54b8-4c7e-4d96-937c-77ec6dbaa6ad",
+      "name": "Enviar E-mail - Cliente Recuperado",
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput",
+      "position": [
+        1568,
+        -464
+      ],
+      "parameters": {
+        "operation": "send",
+        "toRecipients": "={{ $json.para }}",
+        "subject": "={{ $json.assunto }}",
+        "bodyContent": "={{ $json.corpo }}",
+        "additionalFields": {
+          "bodyContentType": "html"
+        }
+      },
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "name": "<<CRIAR CREDENCIAL microsoftOutlookOAuth2Api>>"
+        }
+      }
     }
   ],
   "connections": {
@@ -977,6 +1092,11 @@
         [
           {
             "node": "Deletar Chaves",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "E-mail - Cliente Recuperado",
             "type": "main",
             "index": 0
           }
@@ -1016,7 +1136,7 @@
       "main": [
         [
           {
-            "node": "Pedir Justificativa",
+            "node": "Buscar Matriz Bolsões",
             "type": "main",
             "index": 0
           }
@@ -1055,9 +1175,42 @@
           }
         ]
       ]
+    },
+    "Buscar Matriz Bolsões": {
+      "main": [
+        [
+          {
+            "node": "Destinatários - Justificativa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Destinatários - Justificativa": {
+      "main": [
+        [
+          {
+            "node": "Pedir Justificativa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "E-mail - Cliente Recuperado": {
+      "main": [
+        [
+          {
+            "node": "Enviar E-mail - Cliente Recuperado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": false,
+  "nodeGroups": [],
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
@@ -1066,6 +1219,5 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "nodeGroups": [],
   "tags": []
 }

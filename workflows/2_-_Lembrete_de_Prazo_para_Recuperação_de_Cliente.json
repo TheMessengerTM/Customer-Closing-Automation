@@ -1,7 +1,19 @@
 {
   "name": "2 - Lembrete de Prazo para Recuperação de Cliente",
+  "description": null,
+  "active": false,
+  "versionCounter": 241,
+  "sourceWorkflowId": null,
   "nodes": [
     {
+      "id": "1013d6ef-fdc7-43ce-ab5d-5554887a6d80",
+      "name": "Roda Toda Segunda",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
       "parameters": {
         "rule": {
           "interval": [
@@ -14,17 +26,17 @@
             }
           ]
         }
-      },
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.3,
-      "position": [
-        0,
-        0
-      ],
-      "id": "1013d6ef-fdc7-43ce-ab5d-5554887a6d80",
-      "name": "Roda Toda Segunda"
+      }
     },
     {
+      "id": "9b7d161e-8f50-46ee-bb92-ecc79c982f52",
+      "name": "Verificar se a data venceu",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        0
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -48,30 +60,33 @@
           "combinator": "and"
         },
         "options": {}
-      },
-      "type": "n8n-nodes-base.filter",
-      "typeVersion": 2.3,
-      "position": [
-        448,
-        0
-      ],
-      "id": "9b7d161e-8f50-46ee-bb92-ecc79c982f52",
-      "name": "Verificar se a data venceu"
+      }
     },
     {
-      "parameters": {
-        "jsCode": "const TIMEZONE = 'America/Sao_Paulo';\n\nfunction dataLocal(date) {\n  const partes = new Intl.DateTimeFormat('en-CA', {\n    timeZone: TIMEZONE,\n    year: 'numeric',\n    month: '2-digit',\n    day: '2-digit',\n  }).formatToParts(date);\n\n  const get = (tipo) => partes.find(p => p.type === tipo).value;\n\n  return `${get('year')}-${get('month')}-${get('day')}`;\n}\n\nfunction diaUTC(data) {\n  const [ano, mes, dia] = data.split('-').map(Number);\n  return Date.UTC(ano, mes - 1, dia);\n}\n\nfunction formatarDataISO(dataISO) {\n  if (!dataISO) return 'Não informado';\n\n  return DateTime\n    .fromISO(dataISO)\n    .setZone(TIMEZONE)\n    .toFormat('dd/MM/yyyy');\n}\n\nconst hojeTexto = dataLocal(new Date());\nconst hoje = diaUTC(hojeTexto);\n\nconst linhas = items.map((item) => {\n  const fields = item.json.fields ?? item.json;\n\n  const limiteOriginal = new Date(fields.DataLimiteComercial);\n  const limiteTexto = dataLocal(limiteOriginal);\n  const limite = diaUTC(limiteTexto);\n\n  const diasRestantes = Math.max(\n    0,\n    Math.round((limite - hoje) / (1000 * 60 * 60 * 24))\n  );\n\n  const nomeCliente = fields.NomedoCliente || 'Não informado';\n  const endereco = fields.Title || 'Não informado';\n  const motivo = fields.Motivo || 'Não informado';\n  const email = fields.E_x002d_MaildoCliente || 'Não informado';\n  const telefone = fields.ContatodoCliente || 'Não informado';\n\n  const avisoPrevio = formatarDataISO(fields.AvisoPrevio);\n  const prazoComercial = formatarDataISO(fields.DataLimiteComercial);\n\n  return `👤 Nome: ${nomeCliente}\n📍 Endereço: ${endereco}\n📝 Motivo: ${motivo}\n📧 E-mail: ${email}\n📞 Telefone: ${telefone}\n📅 Aviso Prévio: ${avisoPrevio}\n\n📅 Prazo Comercial: ${prazoComercial}\n⏳ Dias restantes: ${diasRestantes}`;\n});\n\nconst mensagem = `🔔 LEMBRETE — RECUPERAÇÃO DE CLIENTES\n\nOs clientes abaixo ainda estão dentro do prazo comercial para tentativa de recuperação:\n\n${linhas.join('\\n\\n────────────────────\\n\\n')}\n\nFavor acompanhar as tratativas e registrar o resultado na enquete correspondente.`;\n\nreturn [\n  {\n    json: {\n      mensagem\n    }\n  }\n];"
-      },
+      "id": "5b0fb082-2566-4a21-be33-80f1a93db57e",
+      "name": "Montar Lembrete Comercial",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        672,
+        896,
         0
       ],
-      "id": "5b0fb082-2566-4a21-be33-80f1a93db57e",
-      "name": "Montar Lembrete Comercial"
+      "parameters": {
+        "jsCode": "// ===== Representante comercial do bolsão (encerramento) =====\n// O responsável de cada bolsão vem da coluna \"Responsável\" da lista \"Matriz Bolsões\" (SharePoint).\n// O bolsão do encerramento vem da coluna \"Bolsão\" (linha \"Bolsão:\" do e-mail); se vier vazio, tenta pelo endereço.\nconst REPRESENTANTES = {\n  'exemplo1@exemplo.com':  '5511999999999',   // Responsável A\n  'exemplo2@exemplo.com': '5511999999999',   // Responsável B\n};\n// Recebe sempre. Também é o único destino quando o bolsão não é encontrado na Matriz.\nconst SEMPRE = [\n  '5511999999999',          // Responsável pela automação\n];\n// EM TESTE: true = cada representante é trocado pelo número de teste abaixo.\n// Para colocar em produção, troque para false.\nconst MODO_TESTE = true;\nconst NUMEROS_TESTE = {\n  'exemplo1@exemplo.com':  '5511999999999',   // bolsões do Responsável A → Responsável pela automação\n  'exemplo2@exemplo.com': '5511999999999',   // bolsões da Ana → Responsável pela automação\n};\n\nconst norm = s => ' ' + String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()\n  .replace(/[^a-z0-9]+/g, ' ')\n  .replace(/\\b(rua|r|av|avenida|alameda|al|praca|travessa|estrada|bolsao)\\b/g, ' ')\n  .replace(/\\s+/g, ' ').trim() + ' ';\n\n// Procura o bolsão na Matriz (ignora acentos, maiúsculas e \"Rua\", \"Av.\" etc.)\nconst acharBolsao = (textos, matriz) => {\n  for (const t of textos) {\n    const alvo = norm(t);\n    if (alvo.trim().length < 3) continue;\n    const achados = (matriz || []).filter(b => {\n      const n = norm(b.Title);\n      return n.trim().length >= 3 && (alvo.includes(n) || n.includes(alvo));\n    });\n    if (achados.length) return achados.sort((a, b) => norm(b.Title).length - norm(a.Title).length)[0];\n  }\n  return null;\n};\n\nconst bolsaoDoItem = f => f.Bols_x00e3_o || f.Bolsao || '';\n\nconst representante = (f, resposta) => {\n  const lista = resposta && Array.isArray(resposta.value) ? resposta.value : null;\n  const b = lista ? acharBolsao([bolsaoDoItem(f), f.Title], lista) : null;\n  const resp = (b && b.Respons_x00e1_vel) || {};\n  const email = String(resp.EMail || '').toLowerCase();\n  const tel = MODO_TESTE ? NUMEROS_TESTE[email] : REPRESENTANTES[email];\n  let aviso = '';\n  if (!lista) aviso = 'Não foi possível consultar a Matriz Bolsões. Mensagem enviada só para o responsável pela automação.';\n  else if (!b) aviso = `Bolsão \"${bolsaoDoItem(f) || 'não informado'}\" não encontrado na Matriz Bolsões. Mensagem enviada só para o responsável pela automação.`;\n  else if (!tel) aviso = `Responsável \"${resp.Title || 'não preenchido'}\" do bolsão ${b.Title} sem WhatsApp cadastrado na automação.`;\n  if (MODO_TESTE && tel) aviso = `MODO TESTE – em produção esta mensagem iria para ${resp.Title} (${REPRESENTANTES[email] || 'sem número'}).`;\n  return {\n    bolsao: b ? b.Title : (bolsaoDoItem(f) || null),\n    representante: tel ? (resp.Title || null) : null,\n    responsavel: resp.Title || null,   // nome do responsável na Matriz (aparece na mensagem)\n    // em teste vai só para o número de teste do representante; em produção, representante + SEMPRE\n    numeros: MODO_TESTE ? (tel ? [tel] : SEMPRE) : (tel ? [tel] : []).concat(SEMPRE),\n    aviso,\n  };\n};\n\nconst valido = n => String(n).replace(/\\D/g, '');\nconst listaChat = arr => [...new Set(arr.map(valido).filter(n => n.length >= 12 && n.length <= 13))].map(n => n + '@c.us');\n\n\n// ----- Padrão das mensagens (igual à adesão) -----\nconst dataBR = d => { if (!d) return 'Não informada'; const dt = DateTime.fromISO(String(d)).setZone('America/Sao_Paulo'); return dt.isValid ? dt.toFormat('dd/MM/yyyy') : String(d); };\nconst blocoEncerramento = (f, bolsao) => [\n  `🏘️ *Bolsão:* ${bolsao || f.Bols_x00e3_o || f.Bolsao || 'Não informado'}`,\n  '',\n  `👤 *Cliente:* ${f.NomedoCliente || 'Não informado'}`,\n  `📍 *Endereço:* ${f.Title || 'Não informado'}`,\n  `📞 *Telefone:* ${f.ContatodoCliente || 'Não informado'}`,\n  `📧 *E-mail:* ${f.E_x002d_MaildoCliente || 'Não informado'}`,\n  `📝 *Motivo:* ${f.Motivo || 'Não informado'}`,\n  `📅 *Data do encerramento:* ${dataBR(f.AvisoPrevio)}`,\n].join('\\n');\n\nconst TIMEZONE = 'America/Sao_Paulo';\n\nfunction dataLocal(date) {\n  const partes = new Intl.DateTimeFormat('en-CA', {\n    timeZone: TIMEZONE,\n    year: 'numeric',\n    month: '2-digit',\n    day: '2-digit',\n  }).formatToParts(date);\n\n  const get = (tipo) => partes.find(p => p.type === tipo).value;\n\n  return `${get('year')}-${get('month')}-${get('day')}`;\n}\n\nfunction diaUTC(data) {\n  const [ano, mes, dia] = data.split('-').map(Number);\n  return Date.UTC(ano, mes - 1, dia);\n}\n\nfunction formatarDataISO(dataISO) {\n  if (!dataISO) return 'Não informado';\n\n  return DateTime\n    .fromISO(dataISO)\n    .setZone(TIMEZONE)\n    .toFormat('dd/MM/yyyy');\n}\n\nconst hojeTexto = dataLocal(new Date());\nconst hoje = diaUTC(hojeTexto);\n\nconst montarLinha = (item, r) => {\n  const fields = item.json.fields ?? item.json;\n\n  const limiteOriginal = new Date(fields.DataLimiteComercial);\n  const limiteTexto = dataLocal(limiteOriginal);\n  const limite = diaUTC(limiteTexto);\n\n  const diasRestantes = Math.max(\n    0,\n    Math.round((limite - hoje) / (1000 * 60 * 60 * 24))\n  );\n\n  const nomeCliente = fields.NomedoCliente || 'Não informado';\n  const endereco = fields.Title || 'Não informado';\n  const motivo = fields.Motivo || 'Não informado';\n  const email = fields.E_x002d_MaildoCliente || 'Não informado';\n  const telefone = fields.ContatodoCliente || 'Não informado';\n\n  const avisoPrevio = formatarDataISO(fields.AvisoPrevio);\n  const prazoComercial = formatarDataISO(fields.DataLimiteComercial);\n\n  return `${blocoEncerramento(fields, r.bolsao)}\n⏳ *Prazo para recuperação:* ${prazoComercial} (${diasRestantes} ${diasRestantes === 1 ? 'dia restante' : 'dias restantes'})`;\n};\n\n// Um lembrete por destinatário, só com os clientes dos bolsões dele\nconst matriz = $('Buscar Matriz Bolsões').first().json;\nconst porChat = {};\nfor (const item of $('Verificar se a data venceu').all()) {\n  const f = item.json.fields ?? item.json;\n  const r = representante(f, matriz);\n  for (const chatId of listaChat(r.numeros)) (porChat[chatId] = porChat[chatId] || []).push(montarLinha(item, r));\n}\nreturn Object.entries(porChat).map(([chatId, linhas]) => ({ json: {\n  chatId,\n  mensagem: `🔔 *LEMBRETE – COMERCIAL*\\n\\nClientes ainda dentro do prazo para tentativa de recuperação:\\n\\n${linhas.join('\\n\\n────────────────────\\n\\n')}\\n\\n📌 *Pendência:*\\nRegistrar o resultado na enquete de cada cliente.`,\n} }));\n"
+      }
     },
     {
+      "id": "1839ea1f-5f8d-4de5-8659-6c0739710ce0",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        1120,
+        0
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://127.0.0.1:3000/api/sendText",
@@ -84,7 +99,7 @@
             },
             {
               "name": "chatId",
-              "value": "<<PREENCHER>>"
+              "value": "={{ $json.chatId }}"
             },
             {
               "name": "text",
@@ -93,17 +108,20 @@
           ]
         },
         "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        896,
-        0
-      ],
-      "id": "1839ea1f-5f8d-4de5-8659-6c0739710ce0",
-      "name": "HTTP Request"
+      }
     },
     {
+      "id": "a6339ca8-9d4a-487b-ae32-4bac7d38cdb7",
+      "name": "Pegar todos os itens \"Aguardando Comercial\"",
+      "type": "n8n-nodes-base.microsoftSharePoint",
+      "typeVersion": 1,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        224,
+        0
+      ],
       "parameters": {
         "resource": "item",
         "site": {
@@ -127,14 +145,42 @@
         "simplify": false,
         "requestOptions": {}
       },
-      "type": "n8n-nodes-base.microsoftSharePoint",
-      "typeVersion": 1,
+      "credentials": {
+        "microsoftSharePointOAuth2Api": {
+          "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
+        }
+      }
+    },
+    {
+      "id": "d9b89324-5f51-4625-96e2-9a3913f8f135",
+      "name": "Buscar Matriz Bolsões",
+      "notes": "Lista 'Matriz Bolsões' (Gestão Operacional): responsável e Kit de Boas-Vindas de cada bolsão.",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput",
       "position": [
-        224,
+        672,
         0
       ],
-      "id": "a6339ca8-9d4a-487b-ae32-4bac7d38cdb7",
-      "name": "Pegar todos os itens \"Aguardando Comercial\"",
+      "parameters": {
+        "url": "https://SEU-TENANT.sharepoint.com/sites/SEU-SITE/_api/web/lists(guid'<<PREENCHER>>')/items?$select=Id,Title,Respons_x00e1_vel/Title,Respons_x00e1_vel/EMail,AttachmentFiles&$expand=Respons_x00e1_vel,AttachmentFiles&$top=500",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "microsoftSharePointOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json;odata=nometadata"
+            }
+          ]
+        },
+        "options": {}
+      },
       "credentials": {
         "microsoftSharePointOAuth2Api": {
           "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
@@ -158,7 +204,7 @@
       "main": [
         [
           {
-            "node": "Montar Lembrete Comercial",
+            "node": "Buscar Matriz Bolsões",
             "type": "main",
             "index": 0
           }
@@ -186,9 +232,20 @@
           }
         ]
       ]
+    },
+    "Buscar Matriz Bolsões": {
+      "main": [
+        [
+          {
+            "node": "Montar Lembrete Comercial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": false,
+  "nodeGroups": [],
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
@@ -197,6 +254,5 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "nodeGroups": [],
   "tags": []
 }
