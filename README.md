@@ -45,9 +45,9 @@ flowchart TD
 | 0 | Receber Solicitação de Encerramento por E-mail | Outlook (novo e-mail) | Filtra e-mails com "Encerramento" no assunto, extrai do corpo bolsão, nome, endereço, telefone, e-mail, motivo e data do encerramento e cria o item no Lists. Se faltar ou estiver errado algum campo, o item não é criado e o remetente recebe um e-mail dizendo o que corrigir. |
 | 1 | Encerramento de Clientes | A cada 30 s | Pega itens `Pendente`, abre o prazo comercial de 15 dias e envia ao **responsável comercial do bolsão** (lista Matriz Bolsões) os dados do cliente e uma enquete: *o cliente foi recuperado?* |
 | 2 | Lembrete de Prazo para Recuperação de Cliente | Segunda, 8h | Envia a cada responsável comercial um resumo dos clientes dos bolsões dele ainda dentro do prazo e quantos dias faltam. |
-| 3 | Webhook de Mensagem do Comercial | Webhook (voto na enquete) | Recuperado → encerra o processo e avisa o Financeiro por e-mail (HTML). Não recuperado → pede a justificativa ao responsável do bolsão. |
-| 4 | Receber Justificativa Comercial | Webhook (mensagem) | Grava a justificativa e decide: se o aviso prévio já venceu, segue para o Operacional; se não, aguarda. |
-| 5 | Controle de Prazos | Diário, 8h | Marca como `Prazo Expirado` quem passou dos 15 dias sem resposta e libera para o Operacional os clientes cujo aviso prévio venceu. |
+| 3 | Webhook de Mensagem do Comercial | Webhook (voto na enquete) | Recuperado → encerra o processo, avisa o Financeiro por e-mail (HTML) e o Diretor Comercial por WhatsApp. Não recuperado → pede a justificativa ao responsável do bolsão. |
+| 4 | Receber Justificativa Comercial | Webhook (mensagem) | Grava a justificativa, envia ao Diretor Comercial o aviso de cliente não recuperado com essa justificativa e decide: se o aviso prévio já venceu, segue para o Operacional; se não, aguarda. |
+| 5 | Controle de Prazos | Diário, 8h | Marca como `Prazo Expirado` quem passou dos 15 dias sem resposta (e avisa o Diretor Comercial) e libera para o Operacional os clientes cujo aviso prévio venceu. |
 | 6 | Enviar Encerramento ao Operacional | Sub-fluxo | Envia, em paralelo, os dados do cliente e duas enquetes: retirada da placa (coordenador operacional) e retirada dos sistemas (time de Sistemas). |
 | 7 | Webhook de Resposta do Operacional | Webhook (voto na enquete) | Registra placa retirada/não retirada e sistemas retirados. Quando as duas frentes terminam, marca `Concluído`. |
 | 8 | Receber Justificativa Operacional | Webhook (mensagem) | Grava o motivo da placa não ter sido retirada e conclui o encerramento se os sistemas já estiverem resolvidos. |
@@ -111,8 +111,9 @@ O cliente foi recuperado?
 10. Nos nós **Buscar Matriz Bolsões** (fluxos 1 a 4), troque `SEU-TENANT`, `SEU-SITE` e o GUID da lista pelos da sua Matriz Bolsões.
 11. Nos nós de código **Destinatários** (fluxos 1 a 4), preencha `REPRESENTANTES` com o e-mail e o WhatsApp de cada responsável comercial e `SEMPRE` com quem recebe as cópias e os avisos. Em produção, deixe `MODO_TESTE = false`.
 12. No nó **E-mail - Cliente Recuperado** (fluxo 3), defina o e-mail do Financeiro em `EMAIL_FINANCEIRO`.
-13. Opcional: crie um fluxo com **Error Trigger** e selecione-o em *Settings → Error workflow* de cada fluxo, para ser avisado das falhas.
-14. Ative os fluxos.
+13. Nos nós **Mensagem Diretor - ...** (fluxos 3, 4 e 5), coloque o WhatsApp do Diretor Comercial em `DIRETOR_COMERCIAL`. Cada nó tem o seu `MODO_TESTE`.
+14. Opcional: crie um fluxo com **Error Trigger** e selecione-o em *Settings → Error workflow* de cada fluxo, para ser avisado das falhas.
+15. Ative os fluxos.
 
 ## Segurança
 

@@ -2,7 +2,7 @@
   "name": "3 - Webhook de Mensagem do Comercial",
   "description": null,
   "active": false,
-  "versionCounter": 254,
+  "versionCounter": 255,
   "sourceWorkflowId": null,
   "nodes": [
     {
@@ -1062,6 +1062,40 @@
           "name": "<<CRIAR CREDENCIAL microsoftOutlookOAuth2Api>>"
         }
       }
+    },
+    {
+      "id": "5fe6302b-427a-4b15-ae4a-3a0066168224",
+      "name": "Mensagem Diretor - Recuperado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        128
+      ],
+      "parameters": {
+        "jsCode": "// ===== Aviso ao Diretor Comercial (Diretor Comercial) por WhatsApp =====\nconst DIRETOR_COMERCIAL = '5511999999999';   // Diretor Comercial – Diretor Comercial\nconst SEMPRE = ['5511999999999'];            // Responsável pela automação (acompanha sempre)\n// EM TESTE: true = a mensagem vai só para o número de teste. Para produção, troque para false.\nconst MODO_TESTE = true;\nconst NUMERO_TESTE = '5511999999999';\n\nconst dataBR = d => {\n  if (!d) return 'Não informada';\n  const dt = DateTime.fromISO(String(d)).setZone('America/Sao_Paulo');\n  return dt.isValid ? dt.toFormat('dd/MM/yyyy') : String(d);\n};\nconst bloco = f => [\n  `🏘️ *Bolsão:* ${f.Bols_x00e3_o || f.Bolsao || 'Não informado'}`,\n  '',\n  `👤 *Cliente:* ${f.NomedoCliente || 'Não informado'}`,\n  `📍 *Endereço:* ${f.Title || 'Não informado'}`,\n  `📞 *Telefone:* ${f.ContatodoCliente || 'Não informado'}`,\n  `📧 *E-mail:* ${f.E_x002d_MaildoCliente || 'Não informado'}`,\n  `📝 *Motivo do encerramento:* ${f.Motivo || 'Não informado'}`,\n  `📅 *Data do encerramento:* ${dataBR(f.AvisoPrevio)}`,\n].join('\\n');\nconst destinos = () => [...new Set((MODO_TESTE ? [NUMERO_TESTE] : [DIRETOR_COMERCIAL, ...SEMPRE])\n  .map(n => String(n).replace(/\\D/g, '')).filter(n => n.length >= 12 && n.length <= 13))].map(n => n + '@c.us');\nconst rodapeTeste = MODO_TESTE ? `\\n\\n⚠️ MODO TESTE – em produção esta mensagem iria para Diretor Comercial (Diretor Comercial).` : '';\nconst saida = (textos) => {\n  const out = [];\n  textos.forEach((texto, i) => destinos().forEach(chatId => out.push({ json: { chatId, texto: texto + rodapeTeste }, pairedItem: { item: i } })));\n  return out;\n};\n\n// Cliente RECUPERADO (resposta do Comercial na enquete ou alteração no Lists)\nconst f = $('Atualizar item se for Recuperado').first().json.fields || {};\nreturn saida([`✅ *CLIENTE RECUPERADO – ENCERRAMENTO CANCELADO*\\n\\n${bloco(f)}\\n\\n📌 O cliente foi recuperado e o encerramento não vai seguir.`]);\n"
+      }
+    },
+    {
+      "id": "9af9e4f1-cad3-4c76-8cbd-9be193e11670",
+      "name": "Avisar Diretor Comercial - Recuperado",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        1568,
+        128
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/sendText",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ session: 'automacao_encerramento_and_adesao', chatId: $json.chatId, text: $json.texto }) }}",
+        "options": {}
+      }
     }
   ],
   "connections": {
@@ -1097,6 +1131,11 @@
           },
           {
             "node": "E-mail - Cliente Recuperado",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Mensagem Diretor - Recuperado",
             "type": "main",
             "index": 0
           }
@@ -1203,6 +1242,17 @@
         [
           {
             "node": "Enviar E-mail - Cliente Recuperado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensagem Diretor - Recuperado": {
+      "main": [
+        [
+          {
+            "node": "Avisar Diretor Comercial - Recuperado",
             "type": "main",
             "index": 0
           }

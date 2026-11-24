@@ -2,7 +2,7 @@
   "name": "4 - Receber Justificativa Comercial",
   "description": null,
   "active": false,
-  "versionCounter": 90,
+  "versionCounter": 91,
   "sourceWorkflowId": null,
   "nodes": [
     {
@@ -539,6 +539,40 @@
           "name": "<<CRIAR CREDENCIAL microsoftSharePointOAuth2Api>>"
         }
       }
+    },
+    {
+      "id": "ae414702-91bc-4c98-a92b-35e8dd4c9f6b",
+      "name": "Mensagem Diretor - Não Recuperado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        -464
+      ],
+      "parameters": {
+        "jsCode": "// ===== Aviso ao Diretor Comercial (Diretor Comercial) por WhatsApp =====\nconst DIRETOR_COMERCIAL = '5511999999999';   // Diretor Comercial – Diretor Comercial\nconst SEMPRE = ['5511999999999'];            // Responsável pela automação (acompanha sempre)\n// EM TESTE: true = a mensagem vai só para o número de teste. Para produção, troque para false.\nconst MODO_TESTE = true;\nconst NUMERO_TESTE = '5511999999999';\n\nconst dataBR = d => {\n  if (!d) return 'Não informada';\n  const dt = DateTime.fromISO(String(d)).setZone('America/Sao_Paulo');\n  return dt.isValid ? dt.toFormat('dd/MM/yyyy') : String(d);\n};\nconst bloco = f => [\n  `🏘️ *Bolsão:* ${f.Bols_x00e3_o || f.Bolsao || 'Não informado'}`,\n  '',\n  `👤 *Cliente:* ${f.NomedoCliente || 'Não informado'}`,\n  `📍 *Endereço:* ${f.Title || 'Não informado'}`,\n  `📞 *Telefone:* ${f.ContatodoCliente || 'Não informado'}`,\n  `📧 *E-mail:* ${f.E_x002d_MaildoCliente || 'Não informado'}`,\n  `📝 *Motivo do encerramento:* ${f.Motivo || 'Não informado'}`,\n  `📅 *Data do encerramento:* ${dataBR(f.AvisoPrevio)}`,\n].join('\\n');\nconst destinos = () => [...new Set((MODO_TESTE ? [NUMERO_TESTE] : [DIRETOR_COMERCIAL, ...SEMPRE])\n  .map(n => String(n).replace(/\\D/g, '')).filter(n => n.length >= 12 && n.length <= 13))].map(n => n + '@c.us');\nconst rodapeTeste = MODO_TESTE ? `\\n\\n⚠️ MODO TESTE – em produção esta mensagem iria para Diretor Comercial (Diretor Comercial).` : '';\nconst saida = (textos) => {\n  const out = [];\n  textos.forEach((texto, i) => destinos().forEach(chatId => out.push({ json: { chatId, texto: texto + rodapeTeste }, pairedItem: { item: i } })));\n  return out;\n};\n\n// Cliente NÃO RECUPERADO: o Comercial enviou a justificativa\nconst justificativaWhats = $('Edit Fields').first().json.justificativa;\nreturn saida($input.all().map(it => {\n  const f = it.json.fields || it.json || {};\n  const just = String(f.Observa_x00e7__x00e3_oComercial || justificativaWhats || '').trim() || 'Não informada';\n  return `❌ *CLIENTE NÃO RECUPERADO – ENCERRAMENTO*\\n\\n${bloco(f)}\\n\\n💬 *Justificativa do Comercial:* ${just}`;\n}));\n"
+      }
+    },
+    {
+      "id": "89d909b7-e7b7-4024-9c8c-8c2f1e8011ab",
+      "name": "Avisar Diretor Comercial - Não Recuperado",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        1104,
+        -464
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/sendText",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ session: 'automacao_encerramento_and_adesao', chatId: $json.chatId, text: $json.texto }) }}",
+        "options": {}
+      }
     }
   ],
   "connections": {
@@ -615,6 +649,11 @@
             "node": "Aviso Prévio já venceu?",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Mensagem Diretor - Não Recuperado",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -675,6 +714,17 @@
         [
           {
             "node": "Buscar Pendentes Comercial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensagem Diretor - Não Recuperado": {
+      "main": [
+        [
+          {
+            "node": "Avisar Diretor Comercial - Não Recuperado",
             "type": "main",
             "index": 0
           }
