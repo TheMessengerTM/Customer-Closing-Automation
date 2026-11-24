@@ -82,7 +82,7 @@ O cliente foi recuperado?
 - **Lembretes semanais:** pendências do Comercial, do Operacional e de Sistemas são cobradas toda segunda-feira até serem resolvidas.
 - **Cada bolsão tem o seu responsável:** a lista **Matriz Bolsões** diz quem é o responsável comercial de cada bolsão. O fluxo procura o bolsão do encerramento na Matriz, ignorando acentos, maiúsculas e "Rua"/"Av.", e manda a enquete só para essa pessoa. Se o bolsão não for encontrado, a mensagem vai para o responsável pela automação, com um aviso.
 - **Modo teste:** os nós que escolhem destinatários têm uma chave `MODO_TESTE`. Ligada, todas as mensagens e e-mails vão para um número ou e-mail de teste, e cada mensagem diz para quem iria em produção.
-- **Falhas de rede não param o processo:** os nós que acessam SharePoint, WhatsApp, Outlook e Redis tentam de novo até 5 vezes, com 5 s entre as tentativas. Os contadores do Redis que servem de trava contra clique duplo ficam de fora de propósito: repetir um `INCR` faria a trava contar duas vezes. Se a falha persistir, um fluxo de erro avisa no WhatsApp com o link da execução.
+- **Falhas de rede não param o processo:** os nós que acessam SharePoint, WhatsApp, Outlook e Redis tentam de novo até 5 vezes, com 5 s entre as tentativas. Os contadores do Redis que servem de trava contra clique duplo ficam de fora de propósito: repetir um `INCR` faria a trava contar duas vezes. No fluxo 10, que roda a cada 30 s, o nó de código também tenta de novo (3 vezes, com 2 s entre elas), porque uma queda momentânea do *task runner* do n8n derruba qualquer nó de código. Ele só calcula, então repetir é seguro. Se a falha persistir, um fluxo de erro avisa no WhatsApp com o link da execução.
 
 ## Como usar
 

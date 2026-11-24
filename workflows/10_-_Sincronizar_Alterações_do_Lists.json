@@ -2,7 +2,7 @@
   "name": "10 - Sincronizar Alterações do Lists",
   "description": null,
   "active": false,
-  "versionCounter": 29,
+  "versionCounter": 30,
   "sourceWorkflowId": null,
   "nodes": [
     {
@@ -71,6 +71,9 @@
       "name": "Detectar Alterações Manuais",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
       "position": [
         -848,
         -560
